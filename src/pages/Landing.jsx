@@ -36,10 +36,11 @@ export default function Landing() {
     alert("Falla reportada. El equipo ColdTrack ha sido notificado.");
   };
 
-  // TODO: n8n Integration - Connect to IoT monitor dashboard
-  const handleViewMonitor = () => {
-    console.log("Navigating to IoT monitor...");
-    alert("Abriendo Monitor IoT...");
+  const scrollToFlow = () => {
+    const section = document.getElementById("flujo-hiperautomatizacion");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
@@ -82,14 +83,14 @@ export default function Landing() {
                 onClick={handleReportFault}
                 className="bg-[#F40000] px-8 py-6 text-base font-semibold text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20"
               >
-                Reportar Falla Manualmente
+                Reportar Falla
               </Button>
               <Button
-                onClick={handleViewMonitor}
+                onClick={scrollToFlow}
                 variant="outline"
                 className="border-2 border-slate-300 px-8 py-6 text-base font-semibold text-slate-900 hover:border-slate-400 hover:bg-slate-100 transition-colors bg-transparent"
               >
-                Ver Monitor IoT
+                Saber más
               </Button>
             </div>
           </div>
@@ -184,7 +185,10 @@ export default function Landing() {
       </section>
 
       {/* ========== HYPERAUTOMATION FLOW - 3 COLUMNS ========== */}
-      <section className="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)] flex items-center">
+      <section
+        id="flujo-hiperautomatizacion"
+        className="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)] flex items-center"
+      >
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-4 text-center text-3xl font-bold text-slate-900 sm:text-4xl">
             Flujo de Hiperautomatización
