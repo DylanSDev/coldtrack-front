@@ -45,7 +45,7 @@ import {
 // --- Raw Telemetry Data (Provisto por el usuario) ---
 const rawTelemetryData = [
   {
-    comment: "ESCENARIO 1: NORMAL",
+    // Escenario Normal
     device_id: "REF-TUC-001",
     timestamp: "2025-11-26T14:00:00Z",
     telemetry: {
@@ -75,7 +75,7 @@ const rawTelemetryData = [
     },
   },
   {
-    comment: "ESCENARIO 2: FUGA DE GAS",
+    // Escenario Fuga de Gas
     device_id: "REF-TUC-002",
     timestamp: "2025-11-26T14:05:00Z",
     telemetry: {
@@ -105,7 +105,7 @@ const rawTelemetryData = [
     },
   },
   {
-    comment: "ESCENARIO 3: COMPRESOR TRABADO",
+    // Escenario Compresor Trabado
     device_id: "REF-TUC-003",
     timestamp: "2025-11-26T14:10:00Z",
     telemetry: {
@@ -135,32 +135,32 @@ const rawTelemetryData = [
     },
   },
   {
-    comment: "ESCENARIO 4: FALSO POSITIVO",
+    // Escenario Falso Positivo
     device_id: "REF-TUC-004",
-    timestamp: "2025-11-26T14:15:00Z",
+    timestamp: "2025-11-27T10:30:00Z",
     telemetry: {
       thermal: {
-        internal_temp_c: 9.2,
+        internal_temp_c: 12.0,
         ambient_temp_c: 29.0,
-        evaporator_temp_c: -11.0,
-        humidity_pct: 78,
+        evaporator_temp_c: -15.0,
+        humidity_pct: 85,
       },
       electrical: {
-        line_voltage_v: 219.5,
+        line_voltage_v: 220.0,
         compressor_amps: 2.9,
-        power_factor: 0.93,
-        daily_energy_kwh: 2.8,
+        power_factor: 0.92,
+        daily_energy_kwh: 3.8,
       },
       mechanical: {
-        compressor_vibration_x_hz: 50,
-        compressor_vibration_y_hz: 51,
-        fan_rpm: 1252,
-        noise_level_db: 46,
+        compressor_vibration_x_hz: 45,
+        compressor_vibration_y_hz: 46,
+        fan_rpm: 1240,
+        noise_level_db: 48,
       },
       operational: {
-        door_status: "open",
-        door_open_count_24h: 95,
-        compressor_run_time_min: 60,
+        door_status: "closed",
+        door_open_count_24h: 15,
+        compressor_run_time_min: 180,
       },
     },
   },
@@ -219,7 +219,7 @@ export default function Dashboard() {
   const [selectedTelemetry, setSelectedTelemetry] = useState(null);
   const [selectedAnalysis, setSelectedAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
+  const [analysisResult, setAnalysisResult] = useState(null);
   // Simulación de recarga
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -277,14 +277,43 @@ export default function Dashboard() {
     }
   };
 
-  // Handler para Análisis
-  const handleAnalyze = (equipo) => {
+  // Handler para Análisis conectado a n8n
+  const handleAnalyze = async (equipo) => {
+    // 1. Abrir modal y mostrar estado de carga
     setSelectedAnalysis(equipo);
     setIsAnalyzing(true);
-    // Simular retardo de IA
-    setTimeout(() => {
+    setAnalysisResult(null); // Limpiar resultado anterior
+
+    try {
+      // 2. Enviar datos a n8n (Asegúrate de reemplazar la URL)
+      const response = await fetch(
+        "https://primary-production-b0a2e.up.railway.app/webhook-test/ia-diagnosis",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Enviamos el objeto 'equipo' completo que ya contiene la telemetría
+          body: JSON.stringify(equipo.telemetry),
+        }
+      );
+
+      if (!response.ok) throw new Error("Error en la respuesta de n8n");
+
+      // 3. Recibir el diagnóstico generado por la IA en n8n
+      const data = await response.json();
+      setAnalysisResult(data.output);
+    } catch (error) {
+      console.error("Error conectando con n8n:", error);
+      setAnalysisResult({
+        diagnostico: "Error de conexión con el servidor de análisis.",
+        accion: "Verificar conectividad y reintentar.",
+        isError: true,
+      });
+    } finally {
+      // 4. Finalizar estado de carga
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -427,7 +456,7 @@ export default function Dashboard() {
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs text-slate-400 font-medium uppercase">
-                        Salud Disp.
+                        Salud Dispositivo
                       </span>
                       <div className="flex items-center gap-2">
                         <Cpu className="h-4 w-4 text-slate-400" />
@@ -594,67 +623,95 @@ export default function Dashboard() {
           open={!!selectedAnalysis}
           onOpenChange={() => setSelectedAnalysis(null)}
         >
-          <DialogContent className="bg-white">
+          {/* CAMBIO 1: Agregamos max-h-[85vh] y flex-col para el scroll del modal completo */}
+          <DialogContent className="bg-white max-h-[85vh] flex flex-col overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Bot className="h-6 w-6 text-[#F40009]" />
                 Análisis Cognitivo
               </DialogTitle>
-              <DialogDescription>
-                Procesando datos con modelo de ML predictivo...
-              </DialogDescription>
+              {isAnalyzing ? (
+                <DialogDescription>
+                  Procesando datos con modelo de ML predictivo...
+                </DialogDescription>
+              ) : (
+                <DialogDescription>
+                  Diagnóstico generado para:{" "}
+                  <span className="font-mono text-[#F40009]">
+                    {selectedAnalysis?.device_id}
+                  </span>
+                </DialogDescription>
+              )}
             </DialogHeader>
 
-            <div className="py-6 text-center space-y-4">
+            {/* CAMBIO 2: Envolvemos el contenido en un div con overflow-y-auto para el scroll interno */}
+            <div className="flex-1 overflow-y-auto py-6 space-y-4 px-1">
               {isAnalyzing ? (
-                <>
+                <div className="text-center space-y-4">
                   <RefreshCw className="h-12 w-12 text-[#F40009] animate-spin mx-auto" />
                   <p className="text-slate-500 animate-pulse">
-                    Analizando patrones térmicos y eléctricos...
+                    Consultando motor de IA...
                   </p>
-                </>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="bg-red-50 border border-red-100 p-4 rounded-lg text-left">
-                    <h4 className="font-bold text-red-700 flex items-center gap-2">
+                // BLOQUE DE RESULTADOS
+                <div className="space-y-4 text-left">
+                  {/* 1. Diagnóstico Principal */}
+                  <div
+                    className={`border p-4 rounded-lg ${
+                      analysisResult?.isError
+                        ? "bg-red-50 border-red-200"
+                        : "bg-blue-50 border-blue-100"
+                    }`}
+                  >
+                    <h4
+                      className={`font-bold flex items-center gap-2 ${
+                        analysisResult?.isError
+                          ? "text-red-700"
+                          : "text-blue-800"
+                      }`}
+                    >
                       <AlertTriangle className="h-5 w-5" />
-                      Diagnóstico Detectado:
+                      {analysisResult?.primary_diagnosis ||
+                        "Diagnóstico no disponible"}
                     </h4>
-                    {/* Lógica simple para mostrar el diagnóstico basado en el escenario */}
-                    <p className="text-slate-700 mt-2">
-                      {selectedAnalysis?.device_id === "REF-TUC-002" &&
-                        "Alta probabilidad de FUGA DE GAS. El compresor opera continuamente pero la temperatura no desciende. Bajo consumo detectado."}
-                      {selectedAnalysis?.device_id === "REF-TUC-003" &&
-                        "FALLA CRÍTICA EN COMPRESOR. Rotor bloqueado detectado por pico de corriente (LRA) y ausencia de vibración."}
-                      {selectedAnalysis?.device_id === "REF-TUC-004" &&
-                        "ALERTA DE USO INDEBIDO. Equipo saludable, pero la puerta ha permanecido abierta tiempos prolongados."}
-                      {!["REF-TUC-002", "REF-TUC-003", "REF-TUC-004"].includes(
-                        selectedAnalysis?.device_id
-                      ) &&
-                        "Anomalía genérica detectada. Se recomienda inspección visual."}
-                    </p>
+
+                    {/* Nivel de confianza si existe */}
+                    {analysisResult?.confidence_level && (
+                      <Badge
+                        variant="outline"
+                        className="mt-2 bg-white text-blue-700 border-blue-200"
+                      >
+                        Confianza: {analysisResult.confidence_level}%
+                      </Badge>
+                    )}
                   </div>
 
-                  <div className="bg-slate-100 p-4 rounded-lg text-left text-sm">
-                    <p className="font-semibold text-slate-900">
-                      Acción Recomendada:
+                  {/* 2. Razonamiento (Reasoning) */}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <p className="font-semibold text-slate-900 mb-2">
+                      Análisis Técnico:
                     </p>
-                    <ul className="list-disc list-inside text-slate-600 mt-1">
-                      <li>Generar ticket de mantenimiento urgente.</li>
-                      <li>Desactivar equipo remotamente (si aplica).</li>
-                    </ul>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {/* CAMBIO 3: Usamos el nuevo componente para el texto largo */}
+                      <ExpandableText
+                        text={analysisResult?.reasoning}
+                        limit={120}
+                      />
+                    </p>
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Footer del Modal (Se mantiene fijo abajo gracias al flex-col del padre) */}
             <DialogFooter>
               {!isAnalyzing && (
                 <Button
                   className="bg-[#F40009] hover:bg-red-700 text-white w-full"
                   onClick={() => setSelectedAnalysis(null)}
                 >
-                  Confirmar y Generar Orden
+                  Cerrar y Archivar
                 </Button>
               )}
             </DialogFooter>
@@ -664,3 +721,25 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// Componente auxiliar para texto expandible
+const ExpandableText = ({ text, limit = 150 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!text) return "Sin detalles adicionales.";
+
+  // Si el texto es corto, lo mostramos directo
+  if (text.length <= limit) return text;
+
+  return (
+    <span>
+      {isExpanded ? text : `${text.substring(0, limit)}...`}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="ml-2 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
+      >
+        {isExpanded ? "Ver menos" : "Ver más"}
+      </button>
+    </span>
+  );
+};

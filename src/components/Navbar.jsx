@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Refrigerator } from "lucide-react";
-import { useAuth } from "@/context/AuthContext"; // <--- 1. Importamos el hook
+import { Refrigerator, LayoutDashboard } from "lucide-react"; // <--- 1. Agregamos LayoutDashboard
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const location = useLocation();
-  const { isAuthenticated, logout } = useAuth(); // <--- 2. Obtenemos estado y función
+  const { isAuthenticated, logout } = useAuth();
 
   const isLoginPage = location.pathname === "/login";
 
@@ -25,13 +25,26 @@ export default function Navbar() {
         </Link>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <Button
-              onClick={logout}
-              variant="ghost"
-              className="text-slate-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors duration-200"
-            >
-              Cerrar Sesión
-            </Button>
+            <>
+              {/* <--- 2. Botón para ir al Dashboard (visible solo si está logueado) */}
+              <Link to="/dashboard">
+                <Button
+                  variant="ghost"
+                  className="text-slate-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors duration-200 flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Button>
+              </Link>
+
+              <Button
+                onClick={logout}
+                variant="ghost"
+                className="text-slate-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors duration-200"
+              >
+                Cerrar Sesión
+              </Button>
+            </>
           ) : (
             !isLoginPage && (
               <Link to="/login">
