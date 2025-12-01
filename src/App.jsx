@@ -1,17 +1,21 @@
-import { useState } from "react";
-import "./App.css";
-import { Button } from "@/components/ui/button";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ChatBot from "./pages/ChatBot";
+import Orders from "./pages/Orders";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <>
-      <div>
-        <h1 class="bg-red-500">Holaaa Mundo!</h1>
-        <Button>Click me</Button>
-      </div>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/chat" element={<ChatBot />} />
+        <Route path="/ordenes" element={<Orders />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
