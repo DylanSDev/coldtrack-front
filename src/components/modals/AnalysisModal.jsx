@@ -1,5 +1,12 @@
-import React from "react";
-import { Bot, RefreshCw, AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Bot,
+  RefreshCw,
+  AlertTriangle,
+  MessageSquare,
+  FileText,
+  CheckCircle2,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ExpandableText = ({ text, limit = 120 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -38,77 +45,161 @@ export function AnalysisModal({
   isAnalyzing,
   result,
 }) {
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-[#F40009]" />
-            Análisis Cognitivo
-          </DialogTitle>
-          <DialogDescription>
-            {isAnalyzing
-              ? "Procesando datos con modelo de ML predictivo..."
-              : `Diagnóstico para: ${equipment?.device_id}`}
-          </DialogDescription>
-        </DialogHeader>
+  const navigate = useNavigate();
+  const [orderCreated, setOrderCreated] = useState(false);
 
-        <div className="flex-1 overflow-y-auto py-6 space-y-4 px-1">
-          {isAnalyzing ? (
-            <div className="text-center space-y-4">
-              <RefreshCw className="h-12 w-12 text-[#F40009] animate-spin mx-auto" />
-              <p className="text-slate-500 animate-pulse">
-                Consultando motor de IA...
+  // Función para simular la creación de la orden (Workflow administrativo)
+  const handleCreateOrder = () => {
+    // Aquí iría la llamada futura al Webhook de n8n para generar la orden real
+    setOrderCreated(true);
+  };
+
+  const handleClose = () => {
+    setOrderCreated(false); // Resetear estado al cerrar
+    onClose();
+  };
+
+  // Determinar si la confianza es suficiente (Umbral 75%)
+  const isHighConfidence = result?.confidence_level >= 75;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="bg-white max-h-[85vh] flex flex-col overflow-hidden sm:max-w-lg">
+        {/* VISTA 1: RESULTADO DEL ANÁLISIS (Si no se ha creado la orden aún) */}
+        {!orderCreated ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bot className="h-6 w-6 text-[#F40009]" />
+                Análisis Cognitivo
+              </DialogTitle>
+              <DialogDescription>
+                {isAnalyzing
+                  ? "Procesando datos con modelo de ML predictivo..."
+                  : `Diagnóstico para: ${equipment?.device_id}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto py-6 space-y-4 px-1">
+              {isAnalyzing ? (
+                <div className="text-center space-y-4">
+                  <RefreshCw className="h-12 w-12 text-[#F40009] animate-spin mx-auto" />
+                  <p className="text-slate-500 animate-pulse">
+                    Consultando motor de IA...
+                  </p>
+                </div>
+              ) : result ? (
+                <div className="space-y-4 text-left">
+                  {/* Tarjeta de Diagnóstico Principal */}
+                  <div
+                    className={`border p-4 rounded-lg ${
+                      result.isError
+                        ? "bg-red-50 border-red-200"
+                        : "bg-blue-50 border-blue-100"
+                    }`}
+                  >
+                    <h4
+                      className={`font-bold flex items-center gap-2 ${
+                        result.isError ? "text-red-700" : "text-blue-800"
+                      }`}
+                    >
+                      <AlertTriangle className="h-5 w-5" />
+                      {result.primary_diagnosis || "Diagnóstico no disponible"}
+                    </h4>
+
+                    <div className="flex items-center justify-between mt-2">
+                      {result.confidence_level && (
+                        <Badge
+                          variant="outline"
+                          className={`bg-white border-blue-200 ${
+                            isHighConfidence
+                              ? "text-green-700 border-green-200"
+                              : "text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          Confianza IA: {result.confidence_level}%
+                        </Badge>
+                      )}
+                      {/* Indicador visual del umbral */}
+                      <span className="text-xs text-slate-500">
+                        {isHighConfidence
+                          ? "Umbral óptimo"
+                          : "Requiere más datos"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Razonamiento */}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <p className="font-semibold text-slate-900 mb-2">
+                      Razonamiento Técnico:
+                    </p>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      <ExpandableText text={result.reasoning} limit={150} />
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {!isAnalyzing && result && (
+                <>
+                  <Button variant="outline" onClick={handleClose}>
+                    Cancelar
+                  </Button>
+
+                  {/* Lógica condicional basada en el umbral del 75% */}
+                  {isHighConfidence ? (
+                    <Button
+                      className="bg-[#F40009] hover:bg-red-700 text-white gap-2"
+                      onClick={handleCreateOrder}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Generar Orden de Reparación
+                    </Button>
+                  ) : (
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                      onClick={() => navigate("/chat")}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Consultar Agente Investigador
+                    </Button>
+                  )}
+                </>
+              )}
+            </DialogFooter>
+          </>
+        ) : (
+          /* VISTA 2: SIMULACIÓN DE ORDEN CREADA (Modal de Éxito) */
+          <div className="py-10 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-center">
+              <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-slate-900">
+                ¡Orden Generada!
+              </h3>
+              <p className="text-slate-500 max-w-[80%] mx-auto">
+                La Orden de Reparación{" "}
+                <strong>#ORD-{Math.floor(Math.random() * 10000)}</strong> ha
+                sido creada automáticamente y enviada al Bot Administrativo para
+                cotización.
               </p>
             </div>
-          ) : result ? (
-            <div className="space-y-4 text-left">
-              <div
-                className={`border p-4 rounded-lg ${
-                  result.isError
-                    ? "bg-red-50 border-red-200"
-                    : "bg-blue-50 border-blue-100"
-                }`}
+            <div className="pt-4">
+              <Button
+                className="bg-slate-900 text-white hover:bg-slate-800 w-full sm:w-auto min-w-[200px]"
+                onClick={handleClose}
               >
-                <h4
-                  className={`font-bold flex items-center gap-2 ${
-                    result.isError ? "text-red-700" : "text-blue-800"
-                  }`}
-                >
-                  <AlertTriangle className="h-5 w-5" />
-                  {result.primary_diagnosis || "Diagnóstico no disponible"}
-                </h4>
-                {result.confidence_level && (
-                  <Badge
-                    variant="outline"
-                    className="mt-2 bg-white text-blue-700 border-blue-200"
-                  >
-                    Confianza: {result.confidence_level}%
-                  </Badge>
-                )}
-              </div>
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <p className="font-semibold text-slate-900 mb-2">
-                  Razonamiento Técnico:
-                </p>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  <ExpandableText text={result.reasoning} limit={150} />
-                </p>
-              </div>
+                Entendido, cerrar
+              </Button>
             </div>
-          ) : null}
-        </div>
-
-        <DialogFooter>
-          {!isAnalyzing && (
-            <Button
-              className="bg-[#F40009] hover:bg-red-700 text-white w-full"
-              onClick={onClose}
-            >
-              Cerrar y Archivar
-            </Button>
-          )}
-        </DialogFooter>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
