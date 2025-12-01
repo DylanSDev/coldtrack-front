@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 export default function Landing() {
   const [isOnline, setIsOnline] = useState(true);
   const [showAssistant, setShowAssistant] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Simulamos un pulso de estado online
@@ -27,14 +29,6 @@ export default function Landing() {
     }, 1500);
     return () => clearInterval(interval);
   }, []);
-
-  // TODO: n8n Integration - Connect to webhook for fault reporting
-  const handleReportFault = async () => {
-    console.log("Reporting fault to n8n webhook...");
-    // Ejemplo de fetch al webhook:
-    // fetch('https://tu-n8n-webhook.com/...', { method: 'POST' ... })
-    alert("Falla reportada. El equipo ColdTrack ha sido notificado.");
-  };
 
   const scrollToFlow = () => {
     const section = document.getElementById("flujo-hiperautomatizacion");
@@ -80,7 +74,7 @@ export default function Landing() {
             {/* CTA Buttons */}
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button
-                onClick={handleReportFault}
+                onClick={() => navigate("/dashboard")}
                 className="bg-[#F40000] px-8 py-6 text-base font-semibold text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20"
               >
                 Reportar Falla
@@ -377,7 +371,7 @@ export default function Landing() {
               <Button
                 size="sm"
                 className="bg-[#F40000] hover:bg-red-700 text-white flex-1"
-                onClick={handleReportFault}
+                onClick={() => navigate("/dashboard")}
               >
                 Reportar
               </Button>
