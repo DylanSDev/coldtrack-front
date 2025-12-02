@@ -227,7 +227,7 @@ export default function Landing() {
                   Fase 2 - IA
                 </Badge>
                 <p className="text-slate-600 leading-relaxed">
-                  El modelo de IA analiza los dat y diagnostica la falla sin
+                  El modelo de IA analiza los datos y diagnostica la falla sin
                   intervención humana. Precisión 99%.
                 </p>
               </div>

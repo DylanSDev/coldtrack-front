@@ -191,7 +191,24 @@ export function AnalysisModal({
                   ) : (
                     <Button
                       className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                      onClick={() => navigate("/chat")}
+                      onClick={() =>
+                        navigate("/chat", {
+                          state: {
+                            context: {
+                              equipmentId: equipment?.device_id,
+                              diagnosis: result?.primary_diagnosis,
+                              confidence: result?.confidence_level,
+                              reasoning: result?.reasoning,
+                              // AQUÍ ESTÁ LA CLAVE: Mapeamos tu campo JSON exacto
+                              questions: Array.isArray(
+                                result?.questions_for_client
+                              )
+                                ? result.questions_for_client.join(" | ") // Unimos las preguntas con un separador
+                                : "Sin preguntas específicas",
+                            },
+                          },
+                        })
+                      }
                     >
                       <MessageSquare className="h-4 w-4" />
                       Consultar Agente Investigador

@@ -140,7 +140,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => setTouched({ ...touched, email: true })}
-                  placeholder="albertorojo@cliente.com"
+                  placeholder="placeholder@coldtrack.com"
                   className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-gray-50 outline-none transition-all duration-300
                     ${
                       emailError
