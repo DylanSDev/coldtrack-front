@@ -7,6 +7,7 @@ import {
   Thermometer,
   Cpu,
   Bot,
+  CheckCircle2, // <--- Importamos el icono de check
 } from "lucide-react";
 import {
   Card,
@@ -18,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-export function EquipmentCard({ data, onViewTelemetry, onAnalyze }) {
+// Recibimos la prop hasOrder
+export function EquipmentCard({ data, onViewTelemetry, onAnalyze, hasOrder }) {
   const getStatusConfig = (estado) => {
     switch (estado) {
       case "Operativo":
@@ -121,15 +123,27 @@ export function EquipmentCard({ data, onViewTelemetry, onAnalyze }) {
           Ver Telemetría
         </Button>
 
-        {data.estado === "Posible Falla" && (
-          <Button
-            className="w-full bg-[#F40009] hover:bg-red-700 text-white shadow-sm shadow-red-200 gap-2"
-            onClick={onAnalyze}
-          >
-            <Bot className="h-4 w-4" />
-            Realizar Análisis
-          </Button>
-        )}
+        {/* Lógica Modificada para el Botón de Acción */}
+        {data.estado === "Posible Falla" &&
+          (hasOrder ? (
+            // ESTADO: ORDEN CREADA (Verde y Deshabilitado)
+            <Button
+              disabled
+              className="w-full bg-green-600 text-white opacity-90 cursor-not-allowed gap-2"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Orden Creada
+            </Button>
+          ) : (
+            // ESTADO: DEFAULT (Rojo y Habilitado)
+            <Button
+              className="w-full bg-[#F40009] hover:bg-red-700 text-white shadow-sm shadow-red-200 gap-2"
+              onClick={onAnalyze}
+            >
+              <Bot className="h-4 w-4" />
+              Realizar Análisis
+            </Button>
+          ))}
       </CardFooter>
     </Card>
   );

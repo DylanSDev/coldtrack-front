@@ -1,11 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  Snowflake,
-  Search,
-  RefreshCw,
-  Activity,
-  AlertTriangle,
-} from "lucide-react";
+import { Snowflake, Search, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +15,6 @@ import { EquipmentCard } from "@/components/dashboard/EquipmentCard";
 import { AnalysisModal } from "@/components/modals/AnalysisModal";
 import { TelemetryModal } from "@/components/modals/TelemetryModal";
 
-// Importación de servicios y datos mock
 import { runDiagnosis } from "@/services/n8nService";
 import { processedData } from "@/data/mockData";
 
@@ -30,6 +23,9 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // NUEVO: Estado para rastrear qué equipos ya tienen orden creada
+  const [ordersCreated, setOrdersCreated] = useState([]);
 
   // Estados de Modales
   const [selectedTelemetry, setSelectedTelemetry] = useState(null);
@@ -40,8 +36,6 @@ export default function Dashboard() {
   const [analysisResult, setAnalysisResult] = useState(null);
 
   // --- Lógica de Negocio ---
-
-  // Filtrado
   const filteredEquipos = useMemo(() => {
     return processedData.filter((eq) => {
       const matchesSearch =
@@ -53,7 +47,6 @@ export default function Dashboard() {
     });
   }, [searchTerm, statusFilter]);
 
-  // KPIs
   const kpis = useMemo(() => {
     const total = processedData.length;
     const fallas = processedData.filter(
@@ -67,10 +60,8 @@ export default function Dashboard() {
     return { total, fallas, avgTemp: avgTemp.toFixed(1) };
   }, []);
 
-  // Handlers
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Simular llamada a API
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
@@ -85,8 +76,7 @@ export default function Dashboard() {
     } catch (error) {
       setAnalysisResult({
         primary_diagnosis: "Error de conexión",
-        reasoning:
-          "No se pudo conectar con el orquestador n8n. Verifique su conexión o el estado del servidor.",
+        reasoning: "No se pudo conectar con el orquestador n8n.",
         isError: true,
       });
     } finally {
@@ -94,10 +84,14 @@ export default function Dashboard() {
     }
   };
 
+  // NUEVO: Handler que se ejecuta cuando el modal confirma la creación
+  const handleOrderSuccess = (deviceId) => {
+    setOrdersCreated((prev) => [...prev, deviceId]);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header & KPIs */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
@@ -111,7 +105,6 @@ export default function Dashboard() {
           <StatsOverview {...kpis} />
         </div>
 
-        {/* Toolbar de Filtros */}
         <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
@@ -144,19 +137,19 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Grid de Equipos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEquipos.map((equipo) => (
             <EquipmentCard
               key={equipo.device_id}
               data={equipo}
+              // NUEVO: Pasamos si tiene orden creada
+              hasOrder={ordersCreated.includes(equipo.device_id)}
               onViewTelemetry={() => setSelectedTelemetry(equipo)}
               onAnalyze={() => onAnalyzeRequest(equipo)}
             />
           ))}
         </div>
 
-        {/* Modales */}
         <TelemetryModal
           isOpen={!!selectedTelemetry}
           onClose={() => setSelectedTelemetry(null)}
@@ -169,6 +162,8 @@ export default function Dashboard() {
           equipment={selectedAnalysis}
           isAnalyzing={isAnalyzing}
           result={analysisResult}
+          // NUEVO: Pasamos el callback
+          onOrderSuccess={() => handleOrderSuccess(selectedAnalysis?.device_id)}
         />
       </div>
     </div>

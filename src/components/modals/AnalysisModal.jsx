@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { createRepairOrder } from "@/services/n8nService";
 
 const ExpandableText = ({ text, limit = 120 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -44,18 +45,41 @@ export function AnalysisModal({
   equipment,
   isAnalyzing,
   result,
+  onOrderSuccess, // Recibimos la función para avisar al Dashboard
 }) {
   const navigate = useNavigate();
   const [orderCreated, setOrderCreated] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Función para simular la creación de la orden (Workflow administrativo)
-  const handleCreateOrder = () => {
-    // Aquí iría la llamada futura al Webhook de n8n para generar la orden real
-    setOrderCreated(true);
+  // Función para crear la orden llamando al Webhook
+  const handleCreateOrder = async () => {
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        idEquipo: equipment?.device_id || "Desconocido",
+        diagnostico: result?.primary_diagnosis || "Diagnóstico no disponible",
+        razonamiento: result?.reasoning || "Sin detalles adicionales",
+      };
+
+      await createRepairOrder(payload);
+
+      // 1. Avisamos al Dashboard para que actualice la tarjeta (botón verde)
+      if (onOrderSuccess) {
+        onOrderSuccess();
+      }
+
+      // 2. Cambiamos la vista local para mostrar la pantalla de éxito
+      setOrderCreated(true);
+    } catch (error) {
+      console.error("Error al generar la orden:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
-    setOrderCreated(false); // Resetear estado al cerrar
+    // Retrasamos un poco el reset para que no se vea el cambio brusco al cerrar
+    setTimeout(() => setOrderCreated(false), 300);
     onClose();
   };
 
@@ -65,9 +89,10 @@ export function AnalysisModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="bg-white max-h-[85vh] flex flex-col overflow-hidden sm:max-w-lg">
-        {/* VISTA 1: RESULTADO DEL ANÁLISIS (Si no se ha creado la orden aún) */}
+        {/* LÓGICA DE VISTAS: Si no se ha creado orden, muestra análisis. Si sí, muestra éxito. */}
         {!orderCreated ? (
           <>
+            {/* --- VISTA 1: ANÁLISIS Y ACCIONES --- */}
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Bot className="h-6 w-6 text-[#F40009]" />
@@ -120,7 +145,6 @@ export function AnalysisModal({
                           Confianza IA: {result.confidence_level}%
                         </Badge>
                       )}
-                      {/* Indicador visual del umbral */}
                       <span className="text-xs text-slate-500">
                         {isHighConfidence
                           ? "Umbral óptimo"
@@ -149,14 +173,20 @@ export function AnalysisModal({
                     Cancelar
                   </Button>
 
-                  {/* Lógica condicional basada en el umbral del 75% */}
                   {isHighConfidence ? (
                     <Button
                       className="bg-[#F40009] hover:bg-red-700 text-white gap-2"
                       onClick={handleCreateOrder}
+                      disabled={isSubmitting}
                     >
-                      <FileText className="h-4 w-4" />
-                      Generar Orden de Reparación
+                      {isSubmitting ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="h-4 w-4" />
+                      )}
+                      {isSubmitting
+                        ? "Generando..."
+                        : "Generar Orden de Reparación"}
                     </Button>
                   ) : (
                     <Button
@@ -172,7 +202,7 @@ export function AnalysisModal({
             </DialogFooter>
           </>
         ) : (
-          /* VISTA 2: SIMULACIÓN DE ORDEN CREADA (Modal de Éxito) */
+          /* --- VISTA 2: ÉXITO (Restaurada) --- */
           <div className="py-10 text-center space-y-6 animate-in fade-in zoom-in duration-300">
             <div className="flex justify-center">
               <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">

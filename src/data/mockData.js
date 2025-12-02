@@ -125,29 +125,33 @@ const enrichData = (data) => {
   return data.map((item) => {
     let meta = {
       modelo: "Heladera Exhibidora Std",
-      ubicacion: "Sin asignar",
+      ubicacion: "Tienda Central - San Miguel de Tucumán",
       salud: 90,
     };
     if (item.device_id === "REF-TUC-002") {
       meta = {
         modelo: "Visicooler 500L",
-        ubicacion: "Supermercado Norte - Salta",
+        ubicacion: "Supermercado Norte - Las Talitas",
         salud: 45,
       };
     } else if (item.device_id === "REF-TUC-001") {
       meta = {
         modelo: "Visicooler 1 Puerta",
-        ubicacion: "Kiosco El Paso - Tucumán",
+        ubicacion: "Kiosco El Paso - Yerba Buena",
         salud: 98,
       };
     } else if (item.device_id === "REF-TUC-003") {
       meta = {
         modelo: "Freezer Horizontal",
-        ubicacion: "Almacén Don Pepe - Centro",
+        ubicacion: "Almacén Don Pepe - San Miguel de Tucumán",
         salud: 20,
       };
     } else if (item.device_id === "REF-TUC-004") {
-      meta = { modelo: "Heladera Doble", ubicacion: "Estación YPF", salud: 88 };
+      meta = {
+        modelo: "Heladera Doble",
+        ubicacion: "Estación YPF - Alberdi",
+        salud: 88,
+      };
     }
     let estado = "Operativo";
     if (item.telemetry.thermal.internal_temp_c > 8) estado = "Posible Falla";
