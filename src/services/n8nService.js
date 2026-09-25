@@ -1,9 +1,29 @@
-const N8N_DIAGNOSIS_URL =
-  "https://primary-production-b0a2e.up.railway.app/webhook/ia-diagnosis";
-const N8N_REPAIR_URL =
-  "https://primary-production-b0a2e.up.railway.app/webhook/supplier-management";
-const N8N_CHAT_URL =
-  "https://primary-production-b0a2e.up.railway.app/webhook/ia-custom-chat";
+const N8N_DIAGNOSIS_URL = import.meta.env.VITE_N8N_DIAGNOSIS_URL;
+const N8N_REPAIR_URL = import.meta.env.VITE_N8N_REPAIR_URL;
+const N8N_CHAT_URL = import.meta.env.VITE_N8N_CHAT_URL;
+
+/**
+ * Genera los headers para las peticiones, incluyendo Basic Auth si está configurado en las variables de entorno
+ */
+const getHeaders = () => {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  const user = import.meta.env.VITE_N8N_AUTH_USER;
+  const password = import.meta.env.VITE_N8N_AUTH_PASSWORD;
+
+  if (user && password) {
+    try {
+      const basicAuth = btoa(unescape(encodeURIComponent(`${user}:${password}`)));
+      headers["Authorization"] = `Basic ${basicAuth}`;
+    } catch (error) {
+      console.error("Error al generar encabezado de Basic Auth:", error);
+    }
+  }
+
+  return headers;
+};
 
 /**
  * Dispara el Workflow de Diagnóstico Cognitivo en n8n
@@ -12,9 +32,7 @@ export const runDiagnosis = async (telemetryData) => {
   try {
     const response = await fetch(N8N_DIAGNOSIS_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getHeaders(),
       body: JSON.stringify(telemetryData),
     });
 
@@ -38,9 +56,7 @@ export const createRepairOrder = async (orderData) => {
   try {
     const response = await fetch(N8N_REPAIR_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getHeaders(),
       body: JSON.stringify(orderData),
     });
 
@@ -66,9 +82,7 @@ export const sendChatToAgent = async (message, context) => {
   try {
     const response = await fetch(N8N_CHAT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getHeaders(),
       body: JSON.stringify({
         message, // Lo que escribe el usuario
         context, // { equipmentId, diagnosis, questions, ... }
