@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Send, Bot, User, Loader2, ArrowLeft, Wrench } from "lucide-react";
+import { Send, Bot, User, Loader2, ArrowLeft, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -14,27 +14,18 @@ export default function ChatBot() {
   const location = useLocation();
   const scrollRef = useRef(null);
 
-  // 1. Recuperamos el contexto enviado desde el Modal
-  const context = location.state?.context || {};
+  const context = useMemo(() => location.state?.context || {}, [location.state?.context]);
 
-  // Estado de los mensajes
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Efecto de Inicio: Generar el primer mensaje del Bot automáticamente
   useEffect(() => {
     let initialText =
-      "Hola. Soy el Agente de Soporte Técnico. ¿En qué puedo ayudarte?";
+      "Hola. Soy el Asistente de Diagnóstico Cognitivo de ColdTrack. ¿En qué puedo ayudarte hoy?";
 
-    // Si hay contexto, personalizamos el saludo
     if (context.diagnosis) {
-      // Formateamos las preguntas si vienen como string con "|"
-      const questionsText = context.questions
-        ? context.questions.replace(/ \| /g, "\n• ")
-        : "";
-
-      initialText = ` ‼️ Hemos recibido el reporte del equipo: ${context.equipmentId}.\n\n ⚙️​ Diagnóstico preliminar: ${context.diagnosis}\n  Para confirmar la falla, necesitamos hacerte algunas preguntas. \n\n ➡️​ Responde en el chat para iniciar la conversación.\n\n`;
+      initialText = `❄️ Hemos recibido el reporte del equipo: ${context.equipmentId}.\n\n🔍 Diagnóstico preliminar: ${context.diagnosis}\nPara confirmar la falla con alta precisión, conversemos sobre el comportamiento del equipo.\n\n💬 Puedes responder aquí directamente para profundizar.`;
     }
 
     setMessages([
@@ -50,14 +41,12 @@ export default function ChatBot() {
     ]);
   }, [context]);
 
-  // Auto-scroll al fondo
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isLoading]);
 
-  // 3. Manejar el envío de mensajes
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -71,13 +60,11 @@ export default function ChatBot() {
       }),
     };
 
-    // Actualizamos UI inmediatamente
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
 
     try {
-      // Enviamos a n8n
       const botResponseText = await sendChatToAgent(userMsg.content, context);
 
       const botMsg = {
@@ -91,13 +78,13 @@ export default function ChatBot() {
       };
 
       setMessages((prev) => [...prev, botMsg]);
-    } catch (error) {
+    } catch {
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
         isError: true,
         content:
-          "Lo siento, perdí la conexión con el servidor de IA. Intenta de nuevo.",
+          "Se perdió la conexión con el motor de IA de n8n. Por favor verifica tu conexión o credenciales.",
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -113,41 +100,40 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 p-2 md:p-4">
+    <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-3 sm:p-6 space-y-4 animate-in fade-in duration-300">
       {/* Encabezado */}
-      <div className="max-w-4xl w-full mx-auto mb-3 flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="hover:bg-slate-200"
+            className="text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl"
           >
-            <ArrowLeft className="h-5 w-5 text-slate-600" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              Agente Investigador{" "}
-              <Badge
-                variant="outline"
-                className="text-[#F40009] border-[#F40009] bg-red-50"
-              >
-                IA
-              </Badge>
-            </h1>
-            <p className="text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                Asistente Cognitivo
+              </h1>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-cyan-300 border border-blue-500/20">
+                IA n8n
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {context.equipmentId
-                ? `Contexto: ${context.equipmentId}`
-                : "Soporte General"}
+                ? `Contexto Activo: ${context.equipmentId}`
+                : "Soporte General de Frío"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Área de Chat */}
-      <Card className="flex-1 flex flex-col overflow-hidden max-w-4xl w-full mx-auto shadow-md border-slate-200 bg-white">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-6 pb-4">
+      {/* Chat Container */}
+      <Card className="flex-1 flex flex-col overflow-hidden shadow-lg border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0b1120]/95 backdrop-blur-md rounded-2xl min-h-[500px]">
+        <ScrollArea className="flex-1 p-4 sm:p-6">
+          <div className="space-y-5 pb-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -157,61 +143,52 @@ export default function ChatBot() {
               >
                 {/* Avatar */}
                 <Avatar
-                  className={`h-8 w-8 ${
-                    msg.role === "assistant" ? "bg-red-50" : "bg-blue-50"
+                  className={`h-8 w-8 sm:h-9 sm:w-9 ${
+                    msg.role === "assistant"
+                      ? "bg-gradient-to-br from-blue-600 to-cyan-500 text-white"
+                      : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
                   }`}
                 >
-                  <AvatarFallback
-                    className={
-                      msg.role === "assistant"
-                        ? "text-[#F40009]"
-                        : "text-blue-600"
-                    }
-                  >
-                    {msg.role === "assistant" ? (
-                      <Bot size={18} />
-                    ) : (
-                      <User size={18} />
-                    )}
+                  <AvatarFallback className="bg-transparent text-xs font-bold">
+                    {msg.role === "assistant" ? <Bot size={18} /> : <User size={18} />}
                   </AvatarFallback>
                 </Avatar>
 
-                {/* Burbuja de Mensaje */}
+                {/* Bubble */}
                 <div
-                  className={`flex flex-col max-w-[85%] ${
+                  className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${
                     msg.role === "user" ? "items-end" : "items-start"
                   }`}
                 >
                   <div
-                    className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap shadow-sm ${
+                    className={`px-4 py-3 rounded-2xl text-xs sm:text-sm whitespace-pre-wrap leading-relaxed shadow-xs ${
                       msg.role === "user"
-                        ? "bg-blue-600 text-white rounded-tr-none"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-tr-xs"
                         : msg.isError
-                        ? "bg-red-100 text-red-800 border border-red-200 rounded-tl-none"
-                        : "bg-slate-100 text-slate-800 border border-slate-200 rounded-tl-none"
+                        ? "bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-900/50 rounded-tl-xs"
+                        : "bg-slate-100 dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-tl-xs"
                     }`}
                   >
                     {msg.content}
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-1 px-1">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1">
                     {msg.timestamp}
                   </span>
                 </div>
               </div>
             ))}
 
-            {/* Indicador de "Escribiendo..." */}
             {isLoading && (
               <div className="flex gap-3">
-                <Avatar className="h-8 w-8 bg-red-50">
-                  <AvatarFallback className="text-[#F40009]">
+                <Avatar className="h-8 w-8 bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                  <AvatarFallback className="bg-transparent">
                     <Bot size={18} />
                   </AvatarFallback>
                 </Avatar>
-                <div className="px-4 py-3 bg-slate-100 rounded-2xl rounded-tl-none border border-slate-200 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
-                  <span className="text-xs text-slate-500 font-medium">
-                    Analizando respuesta...
+                <div className="px-4 py-3 bg-slate-100 dark:bg-slate-900/90 rounded-2xl rounded-tl-xs border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500 dark:text-cyan-400" />
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Procesando diagnóstico en n8n...
                   </span>
                 </div>
               </div>
@@ -220,31 +197,31 @@ export default function ChatBot() {
           </div>
         </ScrollArea>
 
-        {/* Input */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200">
-          <div className="flex gap-2 items-end">
+        {/* Bottom Input Area */}
+        <div className="p-3 sm:p-4 bg-slate-50/80 dark:bg-slate-900/50 border-t border-slate-200/80 dark:border-slate-800/80">
+          <div className="flex gap-2 items-center">
             <Input
-              placeholder="Describe el problema o responde las preguntas..."
+              placeholder="Escribe tu consulta o respuesta técnica..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              className="bg-white border-slate-300 focus-visible:ring-[#F40009] min-h-[44px]"
+              className="bg-white dark:bg-[#070a14] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus-visible:ring-blue-500 rounded-xl"
             />
             <Button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-[#F40009] hover:bg-red-700 text-white h-[44px] w-[44px] shrink-0 rounded-lg"
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white h-10 w-10 shrink-0 rounded-xl shadow-md shadow-blue-500/20"
             >
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4" />
               )}
             </Button>
           </div>
-          <p className="text-[10px] text-center text-slate-400 mt-2">
-            La IA puede cometer errores. Verifica la información importante.
+          <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 mt-2">
+            ColdTrack AI Copilot • Respuestas asistidas por el flujo de hiperautomatización.
           </p>
         </div>
       </Card>

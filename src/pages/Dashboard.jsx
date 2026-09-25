@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Snowflake, Search, RefreshCw } from "lucide-react";
+import { Snowflake, Search, RefreshCw, Filter, Sparkles, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +24,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // NUEVO: Estado para rastrear qué equipos ya tienen orden creada
+  // Estado para rastrear qué equipos ya tienen orden creada
   const [ordersCreated, setOrdersCreated] = useState([]);
 
   // Estados de Modales
@@ -40,7 +40,8 @@ export default function Dashboard() {
     return processedData.filter((eq) => {
       const matchesSearch =
         eq.device_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        eq.ubicacion.toLowerCase().includes(searchTerm.toLowerCase());
+        eq.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.modelo.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus =
         statusFilter === "todos" || eq.estado === statusFilter;
       return matchesSearch && matchesStatus;
@@ -62,7 +63,7 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+    setTimeout(() => setIsRefreshing(false), 800);
   };
 
   const onAnalyzeRequest = async (equipo) => {
@@ -73,10 +74,10 @@ export default function Dashboard() {
     try {
       const output = await runDiagnosis(equipo.telemetry);
       setAnalysisResult(output);
-    } catch (error) {
+    } catch {
       setAnalysisResult({
         primary_diagnosis: "Error de conexión",
-        reasoning: "No se pudo conectar con el orquestador n8n.",
+        reasoning: "No se pudo conectar con el orquestador n8n. Verifica tus credenciales o el estado del webhook.",
         isError: true,
       });
     } finally {
@@ -84,57 +85,76 @@ export default function Dashboard() {
     }
   };
 
-  // NUEVO: Handler que se ejecuta cuando el modal confirma la creación
   const handleOrderSuccess = (deviceId) => {
     setOrdersCreated((prev) => [...prev, deviceId]);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              <Snowflake className="h-8 w-8 text-[#F40009]" />
-              ColdTrack Monitor
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Gestión centralizada de activos de refrigeración IoT.
-            </p>
+    <div className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-8 animate-in fade-in duration-300">
+      {/* Top Header & Overview */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-2 border-b border-slate-200 dark:border-slate-800/80">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
+              <Server className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                Monitor de Activos IoT
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Supervisión predictiva en tiempo real y gestión de telemetría de frío.
+              </p>
+            </div>
           </div>
-          <StatsOverview {...kpis} />
+        </div>
+        <StatsOverview {...kpis} />
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center bg-white dark:bg-[#0b1120]/90 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs backdrop-blur-md">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <Input
+            placeholder="Buscar por ID, modelo o ubicación..."
+            className="pl-9 bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-blue-500 rounded-xl"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Buscar por ID o ubicación..."
-              className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-[#F40009]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="flex gap-2.5 items-center">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[180px] bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
-            <SelectContent className="bg-white z-50">
+            <SelectContent className="bg-white dark:bg-[#0b1120] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 z-50">
               <SelectItem value="todos">Todos los Estados</SelectItem>
-              <SelectItem value="Operativo">Operativos</SelectItem>
+              <SelectItem value="Operativo">Solo Operativos</SelectItem>
               <SelectItem value="Posible Falla">Posible Falla</SelectItem>
             </SelectContent>
           </Select>
+
           <Button
             variant="outline"
-            className="ml-auto gap-2 hover:text-[#F40009]"
+            className="gap-2 bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
             onClick={handleRefresh}
           >
             <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-500 dark:text-cyan-400" : ""}`}
             />
-            Actualizar Datos
+            <span className="hidden sm:inline">Actualizar</span>
           </Button>
+        </div>
+      </div>
+
+      {/* Equipment Cards Grid */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
+          <span>Mostrando {filteredEquipos.length} equipos registrados</span>
+          <span className="text-[11px] font-mono text-blue-600 dark:text-cyan-400">
+            Nodo Central Tucumán
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -142,30 +162,29 @@ export default function Dashboard() {
             <EquipmentCard
               key={equipo.device_id}
               data={equipo}
-              // NUEVO: Pasamos si tiene orden creada
               hasOrder={ordersCreated.includes(equipo.device_id)}
               onViewTelemetry={() => setSelectedTelemetry(equipo)}
               onAnalyze={() => onAnalyzeRequest(equipo)}
             />
           ))}
         </div>
-
-        <TelemetryModal
-          isOpen={!!selectedTelemetry}
-          onClose={() => setSelectedTelemetry(null)}
-          data={selectedTelemetry}
-        />
-
-        <AnalysisModal
-          isOpen={!!selectedAnalysis}
-          onClose={() => setSelectedAnalysis(null)}
-          equipment={selectedAnalysis}
-          isAnalyzing={isAnalyzing}
-          result={analysisResult}
-          // NUEVO: Pasamos el callback
-          onOrderSuccess={() => handleOrderSuccess(selectedAnalysis?.device_id)}
-        />
       </div>
+
+      {/* Modales */}
+      <TelemetryModal
+        isOpen={!!selectedTelemetry}
+        onClose={() => setSelectedTelemetry(null)}
+        data={selectedTelemetry}
+      />
+
+      <AnalysisModal
+        isOpen={!!selectedAnalysis}
+        onClose={() => setSelectedAnalysis(null)}
+        equipment={selectedAnalysis}
+        isAnalyzing={isAnalyzing}
+        result={analysisResult}
+        onOrderSuccess={() => handleOrderSuccess(selectedAnalysis?.device_id)}
+      />
     </div>
   );
 }

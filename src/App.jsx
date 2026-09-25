@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext"; // Importar Provider
-import ProtectedRoute from "@/components/ProtectedRoute"; // Importar Guard
+import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -10,7 +11,8 @@ import Orders from "@/pages/Orders";
 
 function App() {
   return (
-    <AuthProvider>
+    <ThemeProvider defaultTheme="dark">
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
@@ -28,6 +30,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+  </ThemeProvider>
   );
 }
 
