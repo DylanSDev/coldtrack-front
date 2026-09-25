@@ -114,7 +114,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched({ ...touched, email: true })}
-                placeholder="albertorojo@cliente.com"
+                placeholder="ejemplo@coldtrack.com"
                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-900/70 text-slate-900 dark:text-white outline-none transition-all ${
                   emailError
                     ? "border-red-500 focus:ring-2 focus:ring-red-500/20"
@@ -155,7 +155,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setTouched({ ...touched, password: true })}
-                placeholder="••••••••"
+                placeholder="Ingresa tu contraseña"
                 className={`w-full pl-10 pr-10 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-900/70 text-slate-900 dark:text-white outline-none transition-all ${
                   passwordError
                     ? "border-red-500 focus:ring-2 focus:ring-red-500/20"

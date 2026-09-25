@@ -94,25 +94,25 @@ export default function Orders() {
   };
 
   return (
-    <div className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="flex-1 p-4 sm:p-6 lg:px-12 max-w-[1440px] w-full mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
-            <ClipboardList className="h-6 w-6" />
+          <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
+            <ClipboardList className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Órdenes de Reparación
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Seguimiento de órdenes automáticas gestionadas mediante n8n RPA y proveedores B2B.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-cyan-400 border-blue-500/20">
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-cyan-400 border-blue-500/20 text-[10px]">
             <Bot className="w-3 h-3 mr-1" /> Bot B2B Activo
           </Badge>
         </div>

@@ -90,19 +90,19 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="flex-1 p-4 sm:p-6 lg:px-12 max-w-[1440px] w-full mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Top Header & Overview */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-2 border-b border-slate-200 dark:border-slate-800/80">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-2 border-b border-slate-200 dark:border-slate-800/80">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-cyan-400 border border-blue-500/20">
-              <Server className="h-6 w-6" />
+              <Server className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                 Monitor de Activos IoT
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Supervisión predictiva en tiempo real y gestión de telemetría de frío.
               </p>
             </div>

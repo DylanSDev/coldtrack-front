@@ -26,7 +26,10 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        {
+          allowConstantExport: true,
+          allowExportNames: ['useAuth', 'useTheme', 'buttonVariants', 'badgeVariants'],
+        },
       ],
     },
   },
