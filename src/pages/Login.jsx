@@ -56,17 +56,10 @@ export default function Login() {
         });
         navigate("/dashboard");
       } else {
-        setFormError("Credenciales incorrectas. (Prueba: albertorojo@cliente.com / albertorojo123)");
+        setFormError("Credenciales incorrectas.");
         setIsLoading(false);
       }
     }, 1200);
-  };
-
-  const handleFillDemo = () => {
-    setEmail("albertorojo@cliente.com");
-    setPassword("albertorojo123");
-    setTouched({ email: true, password: true });
-    setFormError("");
   };
 
   return (
@@ -209,17 +202,6 @@ export default function Login() {
               </>
             )}
           </Button>
-
-          {/* Demo helper */}
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="text-[11px] text-blue-600 dark:text-cyan-400 hover:underline font-medium"
-            >
-              Completar con credenciales demo (Alberto Rojo)
-            </button>
-          </div>
         </form>
       </div>
     </div>
