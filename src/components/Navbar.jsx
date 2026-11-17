@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ColdTrackLogo } from "@/components/ColdTrackLogo";
 import {
-  Snowflake,
   LayoutDashboard,
+  Box,
   Bot,
   ClipboardList,
   LogOut,
@@ -41,6 +42,11 @@ export default function Navbar() {
       badge: "IA",
     },
     {
+      name: "Simulación 3D",
+      path: "/simulacion",
+      icon: Box,
+    },
+    {
       name: "Órdenes",
       path: "/ordenes",
       icon: ClipboardList,
@@ -70,10 +76,7 @@ export default function Navbar() {
               to={isAuthenticated ? "/dashboard" : "/"}
               className="flex items-center gap-2.5 group transition-transform duration-200 hover:scale-[1.01]"
             >
-              <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 shadow-sm shadow-blue-500/20 group-hover:shadow-cyan-500/30 transition-all duration-300">
-                <Snowflake className="w-4 h-4 text-white animate-cold-pulse" />
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-lg blur-xs opacity-0 group-hover:opacity-60 transition duration-300 -z-10" />
-              </div>
+              <ColdTrackLogo className="w-9 h-9 rounded-[10px] shadow-sm shadow-blue-500/30 transition-transform duration-500 group-hover:rotate-45" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="text-base sm:text-lg font-black tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-slate-800 dark:from-white dark:via-blue-200 dark:to-cyan-400 bg-clip-text text-transparent">
@@ -105,7 +108,7 @@ export default function Navbar() {
           {isAuthenticated && (
             <div className="hidden md:flex items-center gap-1 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200 dark:border-slate-800/80">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                 const Icon = item.icon;
                 return (
                   <Link
@@ -222,7 +225,7 @@ export default function Navbar() {
             </div>
 
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
               const Icon = item.icon;
               return (
                 <Link

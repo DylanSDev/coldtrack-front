@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, Loader2, AlertCircle, Snowflake, ArrowRight } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { ColdTrackLogo } from "@/components/ColdTrackLogo";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -70,9 +71,7 @@ export default function Login() {
       <div className="w-full max-w-md rounded-3xl bg-white/90 dark:bg-[#0b1120]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
         {/* Branding & Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/30 mb-2">
-            <Snowflake className="w-6 h-6 animate-cold-pulse" />
-          </div>
+          <ColdTrackLogo className="inline-block w-14 h-14 rounded-2xl shadow-lg shadow-blue-500/30 mb-2" />
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
             Portal de Clientes
           </h1>
