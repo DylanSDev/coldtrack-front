@@ -4,8 +4,9 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { CameraControls, Environment, Grid, Html, Lightformer, RoundedBox, useGLTF } from "@react-three/drei";
 import { Bloom, EffectComposer, N8AO } from "@react-three/postprocessing";
-import { Activity, AlertTriangle, CheckCircle2, DoorOpen, Droplets, RotateCcw, Thermometer, Zap } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, DoorOpen, Droplets, Maximize2, Minimize2, RotateCcw, Thermometer, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useFullscreen } from "@/hooks/useFullscreen";
 
 // ---------------------------------------------------------------------------
 // Tipos públicos
@@ -1112,6 +1113,8 @@ const METRICS: { id: HotspotId; label: string; icon: LucideIcon }[] = [
 ];
 
 export function EquipmentSimulator3D({ equipmentName, telemetry, onTelemetryChange, modelUrl, className = "" }: EquipmentSimulator3DProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { isFullscreen, isFallbackFullscreen, toggleFullscreen } = useFullscreen(containerRef);
   const [local, setLocal] = useState(telemetry);
   const [xray, setXray] = useState(false);
   const [exploded, setExploded] = useState(false);
@@ -1154,7 +1157,16 @@ export function EquipmentSimulator3D({ equipmentName, telemetry, onTelemetryChan
   );
 
   return (
-    <div className={`relative h-full min-h-[520px] w-full overflow-hidden rounded-xl bg-gradient-to-b from-[#0F172A] to-[#1E293B] ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative overflow-hidden bg-gradient-to-b from-[#0F172A] to-[#1E293B] ${
+        isFallbackFullscreen
+          ? "fixed inset-0 z-50 h-dvh w-screen rounded-none"
+          : isFullscreen
+            ? "h-full w-full rounded-none"
+            : `h-full min-h-[520px] w-full rounded-xl ${className}`
+      }`}
+    >
       <Canvas shadows dpr={DPR} camera={CAMERA} onPointerMissed={clearFocus}>
         <Scene telemetry={local} xray={xray} exploded={exploded} focus={focus} onSelect={selectHotspot} modelUrl={modelUrl} overlay={overlay} onReady={markReady} />
       </Canvas>
@@ -1173,13 +1185,24 @@ export function EquipmentSimulator3D({ equipmentName, telemetry, onTelemetryChan
       </div>
 
       {/* Toggles */}
-      <div className="absolute left-1/2 top-4 flex -translate-x-1/2 items-center divide-x divide-white/10 rounded-full border border-white/15 bg-slate-900/70 backdrop-blur">
+      <div className="absolute left-1/2 top-14 sm:top-4 flex -translate-x-1/2 items-center divide-x divide-white/10 rounded-full border border-white/15 bg-slate-900/70 backdrop-blur">
         <Toggle label="Modo Rayos X" checked={xray} onChange={setXray} />
         <Toggle label="Vista Explotada" checked={exploded} onChange={setExploded} />
       </div>
 
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+        className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur transition-colors hover:border-white/30 hover:text-white"
+      >
+        {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla completa"}</span>
+      </button>
+
       {/* Panel de telemetría */}
-      <div className="absolute right-4 top-16 w-56 rounded-xl border border-white/10 bg-slate-900/75 p-3 backdrop-blur">
+      <div className="absolute right-4 top-24 sm:top-16 w-56 rounded-xl border border-white/10 bg-slate-900/75 p-3 backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium text-slate-100">Telemetría</span>
           <span className={`inline-flex items-center gap-1 text-[11px] ${alert ? "text-amber-300" : "text-emerald-300"}`}>

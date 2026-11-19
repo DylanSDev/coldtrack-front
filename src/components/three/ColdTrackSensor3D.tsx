@@ -5,8 +5,9 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import { CameraControls, Environment, Grid, Html, Lightformer, RoundedBox, useGLTF } from "@react-three/drei";
 import { Bloom, EffectComposer, N8AO } from "@react-three/postprocessing";
-import { Activity, Cpu, DoorClosed, Droplets, X, Zap } from "lucide-react";
+import { Activity, Cpu, DoorClosed, Droplets, Maximize2, Minimize2, X, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useFullscreen } from "@/hooks/useFullscreen";
 
 // ---------------------------------------------------------------------------
 // Tipos públicos
@@ -1331,6 +1332,8 @@ function Scene({
 // Componente
 // ---------------------------------------------------------------------------
 export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatus = "ok", modelUrl, className = "" }: ColdTrackSensor3DProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { isFullscreen, isFallbackFullscreen, toggleFullscreen } = useFullscreen(containerRef);
   const controlled = activeSensor !== undefined;
   const [internal, setInternal] = useState<SensorId | null>(null);
   const [open, setOpen] = useState(true);
@@ -1358,7 +1361,16 @@ export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatu
   const info = active ? SENSOR_INFO[active] : null;
 
   return (
-    <div className={`relative h-full min-h-[520px] w-full overflow-hidden rounded-xl bg-[#0a111d] ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative overflow-hidden bg-[#0a111d] ${
+        isFallbackFullscreen
+          ? "fixed inset-0 z-50 h-dvh w-screen rounded-none"
+          : isFullscreen
+            ? "h-full w-full rounded-none"
+            : `h-full min-h-[520px] w-full rounded-xl ${className}`
+      }`}
+    >
       <Canvas shadows dpr={DPR} camera={CAMERA} onPointerMissed={handlers.clear}>
         <Scene active={active} open={open} status={telemetryStatus} onSelect={handlers.select} modelUrl={modelUrl} overlay={overlay} onReady={handlers.ready} />
       </Canvas>
@@ -1379,19 +1391,32 @@ export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatu
         </p>
       </div>
 
-      {/* Toggle tapa */}
-      <button
-        type="button"
-        role="switch"
-        aria-checked={open}
-        onClick={() => setOpen(!open)}
-        className="absolute right-4 top-4 flex items-center gap-2.5 rounded-full border border-white/15 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur hover:text-white"
-      >
-        Abrir tapa / Despiece
-        <span className={`relative h-4 w-8 rounded-full transition-colors ${open ? "bg-emerald-500" : "bg-slate-600"}`}>
-          <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${open ? "left-[18px]" : "left-0.5"}`} />
-        </span>
-      </button>
+      {/* Toggle tapa y pantalla completa */}
+      <div className="absolute right-4 top-4 flex items-center gap-2">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={open}
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-2.5 rounded-full border border-white/15 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur hover:text-white"
+        >
+          <span className="hidden sm:inline">Abrir tapa / Despiece</span>
+          <span className="sm:hidden">Despiece</span>
+          <span className={`relative h-4 w-8 rounded-full transition-colors ${open ? "bg-emerald-500" : "bg-slate-600"}`}>
+            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${open ? "left-[18px]" : "left-0.5"}`} />
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          className="flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur transition-colors hover:border-white/30 hover:text-white"
+        >
+          {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          <span className="hidden md:inline">{isFullscreen ? "Salir" : "Pantalla completa"}</span>
+        </button>
+      </div>
 
       {/* Tarjeta del componente seleccionado */}
       {info && (
