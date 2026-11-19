@@ -638,6 +638,7 @@ function Scene({
   variant,
   xray,
   exploded,
+  showLabels,
   focus,
   onSelect,
   modelUrl,
@@ -648,6 +649,7 @@ function Scene({
   variant: EquipmentVariant;
   xray: boolean;
   exploded: boolean;
+  showLabels: boolean;
   focus: HotspotId | null;
   onSelect: (id: HotspotId) => void;
   modelUrl?: string;
@@ -746,11 +748,12 @@ function Scene({
             )}
             <Probe mats={mats} alert={contradiction} part={cfg.parts.probe} />
             <Ds18b20Probe mats={mats} alert={evapAlert} part={cfg.parts.ds18b20} />
-            <Compressor mats={mats} locked={locked} part={cfg.parts.compressor} scale={variant === "chest" ? 0.8 : 1} />
+            <Compressor mats={mats} locked={locked} part={cfg.parts.compressor} scale={variant === "chest" ? 0.58 : 1} />
             <IotModule mats={mats} part={cfg.parts.iot} />
           </Shadows>
           <VariantAirFlow variant={variant} />
           {overlay &&
+            showLabels &&
             hotspots.map((h) => <Hotspot key={h.id} def={h} cfg={cfg} active={focus === h.id} onSelect={onSelect} portal={portal} />)}
         </group>
       )}
@@ -809,6 +812,7 @@ export function EquipmentSimulator3D({
   const [local, setLocal] = useState(telemetry);
   const [xray, setXray] = useState(false);
   const [exploded, setExploded] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const [focus, setFocus] = useState<HotspotId | null>(null);
   const [overlay, setOverlay] = useState<HTMLDivElement | null>(null);
   const clearFocus = useCallback(() => setFocus(null), []);
@@ -864,7 +868,7 @@ export function EquipmentSimulator3D({
       }`}
     >
       <Canvas shadows dpr={DPR} camera={CAMERA} onPointerMissed={clearFocus}>
-        <Scene telemetry={local} variant={variant} xray={xray} exploded={exploded} focus={focus} onSelect={selectHotspot} modelUrl={modelUrl} overlay={overlay} onReady={markReady} />
+        <Scene telemetry={local} variant={variant} xray={xray} exploded={exploded} showLabels={showLabels} focus={focus} onSelect={selectHotspot} modelUrl={modelUrl} overlay={overlay} onReady={markReady} />
       </Canvas>
       {!ready && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">
@@ -881,6 +885,7 @@ export function EquipmentSimulator3D({
       <div className="absolute left-1/2 top-14 sm:top-4 flex -translate-x-1/2 items-center divide-x divide-white/10 rounded-full border border-white/15 bg-slate-900/70 backdrop-blur">
         <Toggle label="Modo Rayos X" checked={xray} onChange={setXray} />
         <Toggle label="Vista Explotada" checked={exploded} onChange={setExploded} />
+        <Toggle label="Etiquetas" checked={showLabels} onChange={setShowLabels} />
       </div>
 
       <button

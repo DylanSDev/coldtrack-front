@@ -149,17 +149,20 @@ La vista `/simulacion` ([Simulation.jsx](file:///d:/MiaCarpeta/4-Repos/5.Coldtra
 
 ### 3.1. Simulador 1: Gemelo Digital del Equipo de Frío (`EquipmentSimulator3D`)
 
-Definido en [EquipmentSimulator3D.tsx](file:///d:/MiaCarpeta/4-Repos/5.Coldtrack-TFI-Admin/coldtrack-front/src/components/three/EquipmentSimulator3D.tsx), representa una heladera exhibidora comercial a escala (`0,80 m` de ancho × `0,72 m` de profundidad × `2,00 m` de alto) con gabinete, cabecera luminosa, puerta de doble vidrio con burlete magnético, rejilla inferior con controlador digital, estantes cromados, evaporador con forzador giratorio, sonda térmica, compresor hermético con cañerías de cobre, acelerómetro, pinza amperométrica, condensador con ventilador y caja IoT lateral.
+Definido en [EquipmentSimulator3D.tsx](file:///d:/MiaCarpeta/4-Repos/5.Coldtrack-TFI-Admin/coldtrack-front/src/components/three/EquipmentSimulator3D.tsx) junto a [EquipmentVariants3D.tsx](file:///d:/MiaCarpeta/4-Repos/5.Coldtrack-TFI-Admin/coldtrack-front/src/components/three/EquipmentVariants3D.tsx), adapta automáticamente su geometría 3D procedural según el modelo del equipo seleccionado:
+- **Visicooler 1 Puerta (`single`, ej. `REF-TUC-001` y `REF-TUC-002`):** gabinete vertical de `0,80 m × 0,72 m × 2,00 m` con puerta batiente de doble vidrio, 4 estantes cromados y evaporador simple.
+- **Heladera Doble (`double`, ej. `REF-TUC-004`):** gabinete vertical doble de `1,48 m × 0,72 m × 2,00 m` con parante central (`mullion`), doble puerta batiente simétrica, doble bahía de estantes cromados, doble sensor magnético en cabecera y evaporador ancho de doble forzador axial.
+- **Freezer Horizontal (`chest`, ej. `REF-TUC-003`):** pozo de frío horizontal de `1,56 m × 0,76 m × 0,90 m` con escalón lateral de sala de máquinas, marco superior con cartel luminoso y sensor magnético, **2 tapas corredizas de vidrio**, 3 canastos colgantes de alambre cromado, serpentina evaporadora horizontal y rejilla frontal derecha con display digital.
 
 #### Qué permite hacer
 1. **Modo Rayos X:** Vuelve semitransparentes la carcasa exterior, el revestimiento interno y la rejilla (`opacity` interpolada a `0,09`) resaltando las aristas del gabinete para inspeccionar el interior sin desmontarlo.
-2. **Vista Explotada (Despiece):** Desplaza suavemente cada subsistema (cabecera, puerta, estantes, evaporador, sonda, compresor, rejilla y módulo IoT) para analizar su ubicación y cableado.
-3. **Hotspots numerados (1 al 5) y Panel de Telemetría:** Permite hacer clic sobre un punto del equipo o sobre una métrica del panel derecho para mover la cámara automáticamente hacia ese sensor/componente (activando Rayos X si no está en vista explotada).
+2. **Vista Explotada (Despiece):** Desplaza suavemente cada subsistema (cabecera/marco, puertas o tapas corredizas, estantes o canastos, evaporador, sondas `SHT31` y `DS18B20`, compresor, rejilla y módulo IoT) para analizar su ubicación y cableado.
+3. **Hotspots numerados (1 al 6) y Panel de Telemetría:** Permite hacer clic sobre un punto del equipo o sobre una métrica del panel derecho para mover la cámara automáticamente hacia ese sensor/componente (activando Rayos X si no está en vista explotada).
 4. **Reacción física y visual en tiempo real según telemetría:**
-   - **Flujo de aire interno (280 partículas):** Circula en lazo cerrado en color celeste (`#7dd3fc`) cuando la puerta está cerrada. Si la puerta está abierta, gira sobre su bisagra (`1,85 rad`) y las partículas viran a ámbar (`#fbbf24`), escapándose por el frente.
+   - **Flujo de aire interno (280 partículas):** Circula en lazo cerrado en color celeste (`#7dd3fc`) cuando la puerta/tapa está cerrada. Si está abierta, las puertas giran sobre sus bisagras (o la tapa corrediza del freezer se desliza horizontalmente) y las partículas viran a ámbar (`#fbbf24`), escapándose hacia el exterior.
    - **Estado del compresor:** Ante sobrecorriente y vibración alta, el compresor tiembla en alta frecuencia y se ilumina con un brillo rojo pulsante (`#ff2a1f`).
    - **Display digital y LEDs:** El display de la base cambia a rojo (`#ff5a4d`) si la temperatura supera `8 °C` (en lugar de turquesa `#5eead4`); el LED del sensor magnético de puerta vira a verde, ámbar o naranja según el diagnóstico.
-5. **Selector de escenarios de prueba y Pantalla completa:** Permite cambiar al instante entre 4 escenarios preconfigurados y ampliar el visor a pantalla completa.
+5. **Selector de escenarios de prueba y Pantalla completa:** Permite cambiar al instante entre 5 escenarios preconfigurados y ampliar el visor a pantalla completa.
 
 #### Los 6 parámetros del Simulador 3D (`EquipmentTelemetry`)
 La función `toSimTelemetry(equipo)` en [Simulation.jsx](file:///d:/MiaCarpeta/4-Repos/5.Coldtrack-TFI-Admin/coldtrack-front/src/pages/Simulation.jsx) mapea la telemetría del equipo a **6 parámetros principales**:

@@ -59,7 +59,7 @@ export const shelfOffset = (i: number): Vec3 => [0, (i - 1.5) * 0.1, 1.05];
 export const CW = 1.56;
 export const CD = 0.76;
 export const CH = 0.9;
-export const MB_W = 0.44;
+export const MB_W = 0.5;
 export const MB_H = 0.38;
 
 export function resolveVariant(name: string, explicit?: EquipmentVariant): EquipmentVariant {
@@ -106,20 +106,20 @@ export function getVariantConfig(variant: EquipmentVariant): VariantConfig {
       parts: {
         canopy: { base: [0, 0, 0], offset: [0, 0.35, 0] },
         grille: { base: [0, 0, 0], offset: [0.2, -0.02, 0.48] },
-        door: { base: [0, CH + 0.018, 0], offset: [0, 0.68, 0.18] },
-        evaporator: { base: [-0.22, 0.48, -CD / 2 + T + 0.055], offset: [0, 0.22, -0.68] },
+        door: { base: [0, CH + 0.004, 0], offset: [0, 0.68, 0.18] },
+        evaporator: { base: [-0.24, 0.52, -CD / 2 + T + 0.055], offset: [0, 0.22, -0.68] },
         probe: { base: [-0.58, CH - 0.16, 0.08], offset: [-0.68, 0.38, 0.25] },
         ds18b20: { base: [-0.54, 0.48, -CD / 2 + T + 0.08], offset: [-0.72, 0.18, -0.5] },
-        compressor: { base: [CW / 2 - MB_W + 0.12, T, 0.02], offset: [0.85, 0, 0.65] },
+        compressor: { base: [0.43, T, 0.0], offset: [0.85, 0, 0.65] },
         iot: { base: [CW / 2 + 0.03, 0.64, 0.08], offset: [0.68, 0.1, -0.25] },
       },
       hotspots: {
         temperatura: { part: "probe", local: [0, 0, 0], cam: [-0.8, 0.45, 1.5], side: "left" },
         tempEvaporador: { part: "ds18b20", local: [0, 0, 0.02], cam: [-0.85, 0.4, 1.55], side: "left" },
-        humedad: { part: "evaporator", local: [0.32, 0.08, 0], cam: [0.6, 0.5, 1.75], side: "right" },
-        estadoPuerta: { part: "canopy", local: [0.26, CH + 0.035, CD / 2 - 0.015], cam: [0.55, 0.5, 1.45], side: "right" },
-        corriente: { part: "compressor", local: [0.216, 0.096, 0.08], cam: [0.85, 0.45, 1.45], side: "right" },
-        vibracion: { part: "compressor", local: [0, 0.24, 0], cam: [0.45, 0.55, 1.5], side: "left" },
+        humedad: { part: "evaporator", local: [-0.05, 0.14, 0], cam: [-0.5, 0.5, 1.65], side: "left" },
+        estadoPuerta: { part: "canopy", local: [0.28, CH + 0.04, CD / 2 - 0.015], cam: [0.55, 0.5, 1.45], side: "right" },
+        corriente: { part: "compressor", local: [0.156, 0.06, 0.058], cam: [0.85, 0.45, 1.45], side: "right" },
+        vibracion: { part: "compressor", local: [0, 0.165, 0], cam: [0.65, 0.55, 1.5], side: "right" },
       },
     };
   }
@@ -212,6 +212,8 @@ export function Fan({ r, mats, speed = 16 }: { r: number; mats: VariantMats; spe
 export function UprightCabinet({ mats, doors }: { mats: VariantMats; doors: 1 | 2 }) {
   const w = doors === 2 ? 1.48 : 0.8;
   const inW = w - 2 * T;
+  const joinW = inW + 0.014;
+  const sideH = H - T;
   const cavY = HB + DOOR_H / 2;
   const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(w, H, D)), [w]);
   useEffect(() => () => edges.dispose(), [edges]);
@@ -220,40 +222,40 @@ export function UprightCabinet({ mats, doors }: { mats: VariantMats; doors: 1 | 
   return (
     <group>
       {[-1, 1].map((s) => (
-        <RoundedBox key={s} args={[T, H, D]} radius={0.012} smoothness={3} material={mats.shell} position={[s * (w / 2 - T / 2), H / 2, 0]} />
+        <RoundedBox key={s} args={[T, sideH, D]} radius={0.01} smoothness={3} material={mats.shell} position={[s * (w / 2 - T / 2), sideH / 2, 0]} />
       ))}
-      <mesh material={mats.shell} position={[0, H / 2, -D / 2 + T / 2]}>
-        <boxGeometry args={[inW, H, T]} />
+      <mesh material={mats.shell} position={[0, sideH / 2, -D / 2 + T / 2]}>
+        <boxGeometry args={[joinW, sideH, T]} />
       </mesh>
       <mesh material={mats.shell} position={[0, T / 2, 0]}>
-        <boxGeometry args={[inW, T, D - T]} />
+        <boxGeometry args={[joinW, T, D - 0.008]} />
       </mesh>
-      <mesh material={mats.shell} position={[0, HB, 0.01]}>
-        <boxGeometry args={[inW, T, D - 2 * T]} />
+      <mesh material={mats.shell} position={[0, HB, 0]}>
+        <boxGeometry args={[joinW, T, D - T]} />
       </mesh>
-      <mesh material={mats.shell} position={[0, H - HC, 0.01]}>
-        <boxGeometry args={[inW, T, D - 2 * T]} />
+      <mesh material={mats.shell} position={[0, H - HC, 0]}>
+        <boxGeometry args={[joinW, T, D - T]} />
       </mesh>
 
       {[-1, 1].map((s) => (
-        <mesh key={s} material={mats.liner} position={[s * (w / 2 - T - 0.005), cavY, 0.01]}>
-          <boxGeometry args={[0.01, DOOR_H - 0.03, D - 2 * T - 0.02]} />
+        <mesh key={s} material={mats.liner} position={[s * (w / 2 - T - 0.004), cavY, 0.005]}>
+          <boxGeometry args={[0.01, DOOR_H - 0.01, D - 2 * T - 0.008]} />
         </mesh>
       ))}
-      <mesh material={mats.liner} position={[0, cavY, -D / 2 + T + 0.005]}>
-        <boxGeometry args={[inW - 0.02, DOOR_H - 0.03, 0.01]} />
+      <mesh material={mats.liner} position={[0, cavY, -D / 2 + T + 0.004]}>
+        <boxGeometry args={[inW, DOOR_H - 0.01, 0.01]} />
       </mesh>
-      <mesh material={mats.liner} position={[0, HB + T / 2 + 0.004, 0.01]}>
-        <boxGeometry args={[inW - 0.02, 0.008, D - 2 * T - 0.02]} />
+      <mesh material={mats.liner} position={[0, HB + T / 2 + 0.004, 0.005]}>
+        <boxGeometry args={[inW, 0.008, D - 2 * T - 0.008]} />
       </mesh>
 
       {doors === 2 && (
         <group position={[0, cavY, D / 2 - T / 2]}>
           <mesh material={mats.shell}>
-            <boxGeometry args={[0.042, DOOR_H, T]} />
+            <boxGeometry args={[0.044, DOOR_H + 0.01, T]} />
           </mesh>
           <mesh material={mats.frame} position={[0, 0, T / 2 + 0.003]}>
-            <boxGeometry args={[0.048, DOOR_H, 0.006]} />
+            <boxGeometry args={[0.05, DOOR_H + 0.006, 0.006]} />
           </mesh>
           {[-0.2, 0.24].map((z) => (
             <mesh key={z} material={mats.chrome} position={[0, 0, z - (D / 2 - T / 2)]}>
@@ -324,15 +326,13 @@ export function UprightCanopy({
 
   return (
     <Part {...part}>
-      <RoundedBox args={[w, T, D]} radius={0.012} smoothness={3} material={mats.shell} position={[0, H - T / 2, 0]} />
-      <mesh material={mats.shell} position={[0, H - HC / 2, D / 2 - T / 2]}>
-        <boxGeometry args={[inW, HC, T]} />
+      <RoundedBox args={[w, T, D]} radius={0.01} smoothness={3} material={mats.shell} position={[0, H - T / 2, 0]} />
+      <mesh material={mats.shell} position={[0, H - HC / 2 - T / 4, D / 2 - T / 2]}>
+        <boxGeometry args={[inW + 0.014, HC - T / 2, T]} />
       </mesh>
-      <mesh material={mats.frame} position={[0, H - HC / 2, D / 2 + 0.003]}>
-        <boxGeometry args={[w - 0.08, HC - 0.05, 0.008]} />
-      </mesh>
-      <mesh position={[0, H - HC / 2, D / 2 + 0.0075]}>
-        <planeGeometry args={[w - 0.11, HC - 0.08]} />
+      <RoundedBox args={[w - 0.03, HC - 0.035, 0.014]} radius={0.006} smoothness={2} material={mats.frame} position={[0, H - HC / 2, D / 2 + 0.002]} />
+      <mesh position={[0, H - HC / 2, D / 2 + 0.0095]}>
+        <planeGeometry args={[w - 0.07, HC - 0.07]} />
         <meshStandardMaterial map={tex.sign} emissiveMap={tex.sign} emissive="#ffffff" emissiveIntensity={0.85} roughness={0.35} />
       </mesh>
       {sensorX.map((sx, idx) => (
@@ -362,39 +362,44 @@ export function UprightBaseGrille({
   const w = doors === 2 ? 1.48 : 0.8;
   const inW = w - 2 * T;
   const z = D / 2 - T / 2;
-  const slatW = inW - 0.3;
-  const slatX = -0.12;
-  const ctrlX = w / 2 - T - 0.12;
+  const grilleH = HB - T;
+  const grilleY = T + grilleH / 2;
+  const slatW = inW - 0.28;
+  const slatX = -0.11;
+  const ctrlX = w / 2 - T - 0.115;
 
   return (
     <Part {...part}>
-      <mesh material={mats.dark} position={[0, HB - T / 2 - 0.02, z]}>
-        <boxGeometry args={[inW, 0.035, T]} />
+      <mesh material={mats.dark} position={[0, grilleY, z - 0.004]}>
+        <boxGeometry args={[inW + 0.012, grilleH + 0.006, T * 0.75]} />
       </mesh>
-      <mesh material={mats.dark} position={[0, 0.05, z]}>
-        <boxGeometry args={[inW, 0.04, T]} />
+      <mesh material={mats.dark} position={[0, HB - T / 2 - 0.016, z]}>
+        <boxGeometry args={[inW + 0.01, 0.036, T]} />
+      </mesh>
+      <mesh material={mats.dark} position={[0, T + 0.018, z]}>
+        <boxGeometry args={[inW + 0.01, 0.036, T]} />
       </mesh>
       {[-inW / 2 + 0.015, slatX + slatW / 2 + 0.02, inW / 2 - 0.015].map((x) => (
-        <mesh key={x} material={mats.dark} position={[x, HB / 2 + 0.01, z]}>
-          <boxGeometry args={[0.03, HB - T - 0.07, T]} />
+        <mesh key={x} material={mats.dark} position={[x, grilleY, z]}>
+          <boxGeometry args={[0.032, grilleH, T]} />
         </mesh>
       ))}
       {Array.from({ length: 9 }).map((_, i) => (
-        <mesh key={i} material={mats.dark} position={[slatX, 0.085 + i * 0.026, z + 0.004]} rotation={[0.6, 0, 0]}>
-          <boxGeometry args={[slatW, 0.022, 0.006]} />
+        <mesh key={i} material={mats.frame} position={[slatX, 0.08 + i * 0.026, z + 0.006]} rotation={[0.55, 0, 0]}>
+          <boxGeometry args={[slatW, 0.02, 0.006]} />
         </mesh>
       ))}
-      <group position={[ctrlX, HB / 2 + 0.012, z + 0.004]}>
+      <group position={[ctrlX, grilleY, z + 0.004]}>
         <mesh material={mats.dark}>
-          <boxGeometry args={[0.2, HB - T - 0.07, T * 0.6]} />
+          <boxGeometry args={[0.2, grilleH - 0.02, T * 0.6]} />
         </mesh>
-        <RoundedBox args={[0.16, 0.085, 0.02]} radius={0.006} smoothness={2} material={mats.black} position={[0, 0.03, 0.012]} />
-        <mesh position={[0, 0.04, 0.0225]}>
+        <RoundedBox args={[0.16, 0.085, 0.02]} radius={0.006} smoothness={2} material={mats.black} position={[0, 0.025, 0.012]} />
+        <mesh position={[0, 0.035, 0.0225]}>
           <planeGeometry args={[0.12, 0.045]} />
           <meshStandardMaterial map={tex.display} emissiveMap={tex.display} emissive="#ffffff" emissiveIntensity={1.6} toneMapped={false} />
         </mesh>
         {[-0.04, 0, 0.04].map((x) => (
-          <mesh key={x} material={mats.steel} position={[x, 0.003, 0.0225]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh key={x} material={mats.steel} position={[x, -0.002, 0.0225]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.008, 0.008, 0.004, 12]} />
           </mesh>
         ))}
@@ -591,51 +596,105 @@ export function UprightEvaporator({
   );
 }
 
+function roundedRectPath<P extends THREE.Path>(ctx: P, w: number, h: number, r: number): P {
+  const x = -w / 2;
+  const y = -h / 2;
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
+  ctx.lineTo(x + r, y + h);
+  ctx.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
+  ctx.lineTo(x, y + r);
+  ctx.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
+  return ctx;
+}
+
+function frameSlabGeometry(outerW: number, outerD: number, outerR: number, innerW: number, innerD: number, innerR: number, height: number, bevel = 0.003) {
+  const shape = roundedRectPath(new THREE.Shape(), outerW, outerD, outerR);
+  shape.holes.push(roundedRectPath(new THREE.Path(), innerW, innerD, innerR));
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: height,
+    bevelEnabled: bevel > 0,
+    bevelThickness: bevel,
+    bevelSize: bevel,
+    bevelOffset: -bevel,
+    bevelSegments: 3,
+    curveSegments: 16,
+  });
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+
 export function ChestCabinet({ mats }: { mats: VariantMats }) {
   const inW = CW - 2 * T;
+  const joinW = inW + 0.016;
   const inD = CD - 2 * T;
-  const tubLeftW = CW - MB_W - T;
+  const joinD = CD - T;
+  const stepX = CW / 2 - MB_W;
+  const leftStart = -CW / 2 + T - 0.008;
+  const leftEnd = stepX + T / 2;
+  const leftW = leftEnd - leftStart;
+  const leftCenterX = (leftStart + leftEnd) / 2;
+  const rightStart = stepX - T / 2;
+  const rightEnd = CW / 2 - T + 0.008;
+  const rightW = rightEnd - rightStart;
+  const rightCenterX = (rightStart + rightEnd) / 2;
   const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(CW, CH, CD)), []);
   useEffect(() => () => edges.dispose(), [edges]);
 
   return (
     <group>
-      <RoundedBox args={[T, CH, CD]} radius={0.012} smoothness={3} material={mats.shell} position={[-CW / 2 + T / 2, CH / 2, 0]} />
-      <RoundedBox args={[T, CH - MB_H, CD]} radius={0.012} smoothness={3} material={mats.shell} position={[CW / 2 - T / 2, MB_H + (CH - MB_H) / 2, 0]} />
+      {[-1, 1].map((s) => (
+        <RoundedBox key={s} args={[T, CH, CD]} radius={0.01} smoothness={3} material={mats.shell} position={[s * (CW / 2 - T / 2), CH / 2, 0]} />
+      ))}
       <mesh material={mats.shell} position={[0, CH / 2, -CD / 2 + T / 2]}>
-        <boxGeometry args={[inW, CH, T]} />
+        <boxGeometry args={[joinW, CH, T]} />
       </mesh>
-      <mesh material={mats.shell} position={[-MB_W / 2, CH / 2, CD / 2 - T / 2]}>
-        <boxGeometry args={[inW - MB_W, CH, T]} />
+      <mesh material={mats.shell} position={[0, MB_H + (CH - MB_H) / 2 - 0.001, CD / 2 - T / 2]}>
+        <boxGeometry args={[joinW, CH - MB_H + 0.002, T]} />
       </mesh>
-      <mesh material={mats.shell} position={[CW / 2 - MB_W / 2, MB_H + (CH - MB_H) / 2, CD / 2 - T / 2]}>
-        <boxGeometry args={[MB_W - T, CH - MB_H, T]} />
+      <mesh material={mats.shell} position={[leftCenterX, MB_H / 2 + 0.001, CD / 2 - T / 2]}>
+        <boxGeometry args={[leftW, MB_H + 0.002, T]} />
       </mesh>
-      <mesh material={mats.shell} position={[-MB_W / 2, T / 2, 0]}>
-        <boxGeometry args={[tubLeftW, T, inD]} />
+      <mesh material={mats.shell} position={[0, T / 2, 0]}>
+        <boxGeometry args={[joinW, T, CD - 0.008]} />
       </mesh>
-      <mesh material={mats.shell} position={[CW / 2 - MB_W / 2, MB_H, 0]}>
-        <boxGeometry args={[MB_W - T, T, inD]} />
+      <mesh material={mats.shell} position={[rightCenterX, MB_H - T / 2, 0]}>
+        <boxGeometry args={[rightW, T, joinD]} />
       </mesh>
-      <mesh material={mats.shell} position={[CW / 2 - MB_W, MB_H / 2, 0]}>
-        <boxGeometry args={[T, MB_H, inD]} />
-      </mesh>
-
-      <mesh material={mats.liner} position={[0, CH / 2 + 0.02, -CD / 2 + T + 0.006]}>
-        <boxGeometry args={[inW - 0.02, CH - 0.08, 0.008]} />
-      </mesh>
-      <mesh material={mats.liner} position={[-CW / 2 + T + 0.006, CH / 2 + 0.02, 0]}>
-        <boxGeometry args={[0.008, CH - 0.08, inD - 0.02]} />
-      </mesh>
-      <mesh material={mats.liner} position={[-MB_W / 2, T + 0.006, 0]}>
-        <boxGeometry args={[tubLeftW - 0.02, 0.008, inD - 0.02]} />
-      </mesh>
-      <mesh material={mats.liner} position={[CW / 2 - MB_W / 2, MB_H + T / 2 + 0.005, 0]}>
-        <boxGeometry args={[MB_W - T - 0.02, 0.008, inD - 0.02]} />
+      <mesh material={mats.shell} position={[stepX, MB_H / 2, 0]}>
+        <boxGeometry args={[T, MB_H + 0.004, joinD]} />
       </mesh>
 
-      <mesh position={[0, CH - 0.04, CD / 2 - T - 0.018]}>
-        <boxGeometry args={[inW - 0.12, 0.01, 0.01]} />
+      <mesh material={mats.liner} position={[0, CH / 2 + 0.015, -CD / 2 + T + 0.004]}>
+        <boxGeometry args={[inW, CH - 0.05, 0.008]} />
+      </mesh>
+      <mesh material={mats.liner} position={[0, MB_H + (CH - MB_H) / 2, CD / 2 - T - 0.004]}>
+        <boxGeometry args={[inW, CH - MB_H - 0.02, 0.008]} />
+      </mesh>
+      <mesh material={mats.liner} position={[leftCenterX - 0.004, MB_H / 2 + 0.01, CD / 2 - T - 0.004]}>
+        <boxGeometry args={[leftW - T, MB_H - 0.02, 0.008]} />
+      </mesh>
+      <mesh material={mats.liner} position={[-CW / 2 + T + 0.004, CH / 2 + 0.015, 0]}>
+        <boxGeometry args={[0.008, CH - 0.05, inD]} />
+      </mesh>
+      <mesh material={mats.liner} position={[CW / 2 - T - 0.004, MB_H + (CH - MB_H) / 2, 0]}>
+        <boxGeometry args={[0.008, CH - MB_H - 0.02, inD]} />
+      </mesh>
+      <mesh material={mats.liner} position={[leftCenterX - 0.004, T + 0.004, 0]}>
+        <boxGeometry args={[leftW - T, 0.008, inD]} />
+      </mesh>
+      <mesh material={mats.liner} position={[rightCenterX, MB_H + 0.004, 0]}>
+        <boxGeometry args={[rightW - 0.01, 0.008, inD]} />
+      </mesh>
+      <mesh material={mats.liner} position={[stepX - T / 2 - 0.004, MB_H / 2 + 0.01, 0]}>
+        <boxGeometry args={[0.008, MB_H - 0.01, inD]} />
+      </mesh>
+
+      <mesh position={[0, CH - 0.04, CD / 2 - T - 0.016]}>
+        <boxGeometry args={[inW - 0.1, 0.01, 0.01]} />
         <meshStandardMaterial color="#ffffff" emissive="#dbeafe" emissiveIntensity={1.1} toneMapped={false} />
       </mesh>
       <pointLight position={[-0.15, CH - 0.18, 0]} intensity={0.65} distance={1.9} color="#e0efff" />
@@ -672,21 +731,27 @@ export function ChestCollar({
   part: { base: Vec3; offset: Vec3 };
 }) {
   const led = doorOpen ? "#fbbf24" : flag ? "#fb923c" : "#34d399";
+  const geo = useMemo(
+    () => ({
+      rim: frameSlabGeometry(CW + 0.014, CD + 0.014, 0.016, CW - 2 * T - 0.008, CD - 2 * T - 0.008, 0.008, 0.046, 0.004),
+      ledge: frameSlabGeometry(CW - 2 * T + 0.004, CD - 2 * T + 0.004, 0.008, CW - 2 * T - 0.032, CD - 2 * T - 0.032, 0.006, 0.014, 0),
+    }),
+    [],
+  );
+  useEffect(() => () => Object.values(geo).forEach((g) => g.dispose()), [geo]);
+
   return (
     <Part {...part}>
-      {[-1, 1].map((s) => (
-        <RoundedBox key={`z${s}`} args={[CW + 0.02, 0.038, 0.055]} radius={0.01} smoothness={3} material={mats.frame} position={[0, CH + 0.01, s * (CD / 2 - 0.018)]} />
-      ))}
-      {[-1, 1].map((s) => (
-        <RoundedBox key={`x${s}`} args={[0.055, 0.038, CD]} radius={0.01} smoothness={3} material={mats.frame} position={[s * (CW / 2 - 0.018), CH + 0.01, 0]} />
-      ))}
-      <RoundedBox args={[0.56, 0.14, 0.032]} radius={0.008} smoothness={2} material={mats.frame} position={[0, CH + 0.09, -CD / 2 + 0.022]} />
-      <mesh position={[0, CH + 0.09, -CD / 2 + 0.039]}>
-        <planeGeometry args={[0.52, 0.11]} />
+      <mesh geometry={geo.rim} material={mats.frame} position={[0, CH - 0.012, 0]} />
+      <mesh geometry={geo.ledge} material={mats.dark} position={[0, CH - 0.006, 0]} />
+      <RoundedBox args={[0.58, 0.036, 0.04]} radius={0.006} smoothness={2} material={mats.frame} position={[0, CH + 0.036, -CD / 2 + 0.018]} />
+      <RoundedBox args={[0.56, 0.13, 0.032]} radius={0.008} smoothness={2} material={mats.frame} position={[0, CH + 0.105, -CD / 2 + 0.018]} />
+      <mesh position={[0, CH + 0.105, -CD / 2 + 0.035]}>
+        <planeGeometry args={[0.52, 0.1]} />
         <meshStandardMaterial map={tex.sign} emissiveMap={tex.sign} emissive="#ffffff" emissiveIntensity={0.85} roughness={0.35} />
       </mesh>
-      <RoundedBox args={[0.09, 0.024, 0.022]} radius={0.005} smoothness={2} material={mats.plastic} position={[0.26, CH + 0.034, CD / 2 - 0.012]} />
-      <mesh position={[0.295, CH + 0.034, CD / 2 + 0.001]}>
+      <RoundedBox args={[0.09, 0.022, 0.022]} radius={0.005} smoothness={2} material={mats.plastic} position={[0.28, CH + 0.038, CD / 2 - 0.014]} />
+      <mesh position={[0.315, CH + 0.038, CD / 2 - 0.001]}>
         <sphereGeometry args={[0.006, 12, 12]} />
         <meshStandardMaterial color={led} emissive={led} emissiveIntensity={3} toneMapped={false} />
       </mesh>
@@ -697,33 +762,48 @@ export function ChestCollar({
 export function ChestSlidingLids({ mats, part }: { mats: VariantMats; part: { base: Vec3; offset: Vec3 } }) {
   const rightLid = useRef<THREE.Group>(null);
   const anim = useAnim();
-  const paneW = (CW - 0.09) / 2;
-  const paneD = CD - 0.08;
+  const innerW = CW - 2 * T - 0.012;
+  const paneW = innerW / 2 + 0.008;
+  const paneD = CD - 2 * T - 0.012;
+  const frameT = 0.022;
 
   useFrame(() => {
     if (rightLid.current) {
-      rightLid.current.position.x = paneW / 2 - 0.01 - anim.current.door * (paneW * 0.82);
+      rightLid.current.position.x = paneW / 2 - 0.006 - anim.current.door * (paneW * 0.82);
     }
   });
 
   return (
     <Part {...part}>
-      <group position={[-paneW / 2 + 0.01, 0, 0]}>
-        <RoundedBox args={[paneW, 0.018, paneD]} radius={0.006} smoothness={2} material={mats.alu} />
-        <mesh material={mats.glass} position={[0, 0.01, 0]} renderOrder={2}>
-          <boxGeometry args={[paneW - 0.06, 0.006, paneD - 0.06]} />
-        </mesh>
-        <RoundedBox args={[0.022, 0.024, 0.18]} radius={0.006} smoothness={2} material={mats.chrome} position={[-paneW / 2 + 0.045, 0.018, 0]} />
-      </group>
-
-      <group ref={rightLid} position={[paneW / 2 - 0.01, 0.018, 0]}>
-        <RoundedBox args={[paneW, 0.018, paneD]} radius={0.006} smoothness={2} material={mats.alu} />
-        <mesh material={mats.glass} position={[0, 0.01, 0]} renderOrder={2}>
-          <boxGeometry args={[paneW - 0.06, 0.006, paneD - 0.06]} />
-        </mesh>
-        <RoundedBox args={[0.022, 0.024, 0.18]} radius={0.006} smoothness={2} material={mats.chrome} position={[paneW / 2 - 0.045, 0.018, 0]} />
-        <RoundedBox args={[0.085, 0.02, 0.016]} radius={0.004} smoothness={2} material={mats.plastic} position={[-0.1, 0.008, paneD / 2 - 0.01]} />
-      </group>
+      {[
+        { ref: undefined, x: -paneW / 2 + 0.006, y: 0, side: -1 },
+        { ref: rightLid, x: paneW / 2 - 0.006, y: 0.014, side: 1 },
+      ].map(({ ref, x, y, side }, idx) => (
+        <group key={idx} ref={ref} position={[x, y, 0]}>
+          {[-1, 1].map((s) => (
+            <mesh key={`z${s}`} material={mats.alu} position={[0, 0.007, s * (paneD / 2 - frameT / 2)]}>
+              <boxGeometry args={[paneW, 0.014, frameT]} />
+            </mesh>
+          ))}
+          {[-1, 1].map((s) => (
+            <mesh key={`x${s}`} material={mats.alu} position={[s * (paneW / 2 - frameT / 2), 0.007, 0]}>
+              <boxGeometry args={[frameT, 0.014, paneD - 2 * frameT]} />
+            </mesh>
+          ))}
+          <mesh material={mats.glass} position={[0, 0.008, 0]} renderOrder={2}>
+            <boxGeometry args={[paneW - 2 * frameT + 0.004, 0.006, paneD - 2 * frameT + 0.004]} />
+          </mesh>
+          <RoundedBox args={[0.02, 0.022, 0.2]} radius={0.005} smoothness={2} material={mats.chrome} position={[side * (paneW / 2 - 0.04), 0.02, 0]} />
+          {side === 1 && (
+            <>
+              <mesh material={mats.rubber} position={[-paneW / 2 + 0.004, 0.002, 0]}>
+                <boxGeometry args={[0.01, 0.016, paneD - 0.004]} />
+              </mesh>
+              <RoundedBox args={[0.085, 0.018, 0.016]} radius={0.004} smoothness={2} material={mats.plastic} position={[-0.08, 0.016, paneD / 2 - 0.012]} />
+            </>
+          )}
+        </group>
+      ))}
     </Part>
   );
 }
@@ -737,21 +817,40 @@ export function ChestMachineGrille({
   tex: VariantTextures;
   part: { base: Vec3; offset: Vec3 };
 }) {
-  const gx = CW / 2 - MB_W / 2;
+  const stepX = CW / 2 - MB_W;
+  const grilleLeft = stepX + T / 2 - 0.002;
+  const grilleRight = CW / 2 - T + 0.004;
+  const grilleW = grilleRight - grilleLeft;
+  const gx = (grilleLeft + grilleRight) / 2;
+  const grilleH = MB_H - T + 0.004;
+  const gy = T - 0.002 + grilleH / 2;
   const z = CD / 2 - T / 2;
   return (
     <Part {...part}>
-      <group position={[gx, MB_H / 2, z]}>
-        <RoundedBox args={[MB_W - 0.03, MB_H - 0.04, T * 0.8]} radius={0.008} smoothness={2} material={mats.dark} />
-        {Array.from({ length: 8 }).map((_, i) => (
-          <mesh key={i} material={mats.frame} position={[-0.08, -MB_H / 2 + 0.06 + i * 0.032, 0.014]} rotation={[0.5, 0, 0]}>
-            <boxGeometry args={[MB_W - 0.22, 0.018, 0.006]} />
+      <group position={[gx, gy, z]}>
+        <mesh material={mats.dark} position={[0, 0, -0.002]}>
+          <boxGeometry args={[grilleW, grilleH, T * 0.92]} />
+        </mesh>
+        <mesh material={mats.frame} position={[0, grilleH / 2 - 0.014, 0.002]}>
+          <boxGeometry args={[grilleW, 0.028, T]} />
+        </mesh>
+        <mesh material={mats.frame} position={[0, -grilleH / 2 + 0.014, 0.002]}>
+          <boxGeometry args={[grilleW, 0.028, T]} />
+        </mesh>
+        {[-grilleW / 2 + 0.014, 0.045, grilleW / 2 - 0.014].map((x) => (
+          <mesh key={x} material={mats.frame} position={[x, 0, 0.002]}>
+            <boxGeometry args={[0.028, grilleH, T]} />
           </mesh>
         ))}
-        <group position={[MB_W / 2 - 0.11, 0.03, 0.014]}>
-          <RoundedBox args={[0.14, 0.08, 0.018]} radius={0.006} smoothness={2} material={mats.black} />
-          <mesh position={[0, 0.006, 0.01]}>
-            <planeGeometry args={[0.11, 0.042]} />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <mesh key={i} material={mats.frame} position={[-0.085, -grilleH / 2 + 0.055 + i * 0.032, T / 2 + 0.003]} rotation={[0.5, 0, 0]}>
+            <boxGeometry args={[grilleW - 0.21, 0.018, 0.006]} />
+          </mesh>
+        ))}
+        <group position={[grilleW / 2 - 0.095, 0.025, T / 2 + 0.003]}>
+          <RoundedBox args={[0.135, 0.078, 0.018]} radius={0.006} smoothness={2} material={mats.black} />
+          <mesh position={[0, 0.005, 0.01]}>
+            <planeGeometry args={[0.105, 0.04]} />
             <meshStandardMaterial map={tex.display} emissiveMap={tex.display} emissive="#ffffff" emissiveIntensity={1.6} toneMapped={false} />
           </mesh>
         </group>
