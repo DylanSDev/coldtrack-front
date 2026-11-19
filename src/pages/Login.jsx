@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight } from "lucide-react";
-import { ColdTrackLogo } from "@/components/ColdTrackLogo";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ColdTrackLogo } from "@/components/ColdTrackLogo";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const MONITORED_PARAMETERS = [
+  { label: "Sonda térmica", spec: "-20 °C a +40 °C", unit: "°C" },
+  { label: "Humedad relativa", spec: "0 a 100 % HR", unit: "%" },
+  { label: "Pinza de corriente", spec: "Consumo compresor", unit: "A" },
+  { label: "Acelerómetro triaxial", spec: "Desbalance y traba", unit: "Hz" },
+];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,193 +25,230 @@ export default function Login() {
   const [touched, setTouched] = useState({ email: false, password: false });
   const [formError, setFormError] = useState("");
 
-  // Validación declarativa
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isEmailValid = emailRegex.test(email);
+  const isEmailValid = EMAIL_REGEX.test(email.trim());
+  const isPasswordValid = password.length >= 6;
+
   const emailError = touched.email
-    ? !email
-      ? "El email es requerido"
+    ? !email.trim()
+      ? "Ingresá tu correo electrónico."
       : !isEmailValid
-      ? "Ingresa un email válido"
+      ? "El formato del correo no es válido."
       : ""
     : "";
 
-  const isPasswordValid = password.length >= 6;
   const passwordError = touched.password
     ? !password
-      ? "La contraseña es requerida"
-      : password.length < 6
-      ? "Mínimo 6 caracteres"
+      ? "Ingresá tu contraseña."
+      : !isPasswordValid
+      ? "Debe tener al menos 6 caracteres."
       : ""
     : "";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     setFormError("");
     setTouched({ email: true, password: true });
 
     if (!isEmailValid || !isPasswordValid) return;
 
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
 
     setTimeout(() => {
-      if (
-        email === "albertorojo@cliente.com" &&
-        password === "albertorojo123"
-      ) {
+      if (normalizedEmail === "albertorojo@cliente.com" && password === "albertorojo123") {
         login({
-          email: email,
+          email: normalizedEmail,
           name: "Alberto Rojo",
           role: "client",
         });
         navigate("/dashboard");
       } else {
-        setFormError("Credenciales incorrectas.");
+        setFormError("El correo o la contraseña no coinciden con una cuenta activa.");
         setIsLoading(false);
       }
-    }, 1200);
+    }, 400);
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-blue-600/20 via-cyan-500/15 to-indigo-600/20 blur-3xl pointer-events-none -z-10 rounded-full" />
+    <div className="flex-1 flex bg-white dark:bg-[#070a14]">
+      <section className="hidden lg:flex lg:w-[46%] xl:w-[48%] flex-col justify-between p-10 xl:p-14 bg-[#034AAD] dark:bg-[#0b1120] text-white border-r border-slate-200 dark:border-slate-800 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
 
-      <div className="w-full max-w-md rounded-3xl bg-white/90 dark:bg-[#0b1120]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
-        {/* Branding & Header */}
-        <div className="text-center space-y-2">
-          <ColdTrackLogo className="inline-block w-14 h-14 rounded-2xl shadow-lg shadow-blue-500/30 mb-2" />
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-            Portal de Clientes
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Ingresa para gestionar la telemetría y diagnósticos de tus equipos.
+        <div className="relative flex items-center gap-3">
+          <ColdTrackLogo tile={false} className="w-8 h-8 text-white" />
+          <div>
+            <p className="text-base font-bold tracking-tight">ColdTrack</p>
+            <p className="text-xs text-blue-100/80 dark:text-slate-400">
+              Monitoreo térmico e industrial
+            </p>
+          </div>
+        </div>
+
+        <div className="relative max-w-md space-y-4">
+          <h2 className="text-3xl xl:text-4xl font-bold tracking-tight leading-tight">
+            Control continuo de tu cadena de frío.
+          </h2>
+          <p className="text-sm text-blue-100/90 dark:text-slate-300 leading-relaxed">
+            Supervisá temperatura interna, consumo eléctrico y estado mecánico de tus equipos en tiempo real desde un único panel operativo.
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="email"
-              className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-            >
-              Email Corporativo
-            </label>
-            <div className="relative">
+        <div className="relative border-t border-white/15 dark:border-slate-800 pt-6 space-y-3">
+          <p className="text-xs font-medium text-blue-100/80 dark:text-slate-400">
+            Variables registradas por nodo IoT
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {MONITORED_PARAMETERS.map((item) => (
               <div
-                className={`absolute left-3.5 top-3 transition-colors ${
-                  isEmailValid
-                    ? "text-emerald-500"
-                    : "text-slate-400 dark:text-slate-500"
-                }`}
+                key={item.label}
+                className="rounded-lg border border-white/15 dark:border-slate-800 bg-white/5 dark:bg-slate-900/60 px-3 py-2.5"
               >
-                <User className="w-4 h-4" />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-white">{item.label}</span>
+                  <span className="font-mono text-[11px] text-blue-100 dark:text-slate-400">
+                    {item.unit}
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-100/75 dark:text-slate-400 mt-0.5">
+                  {item.spec}
+                </p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-[380px] space-y-7">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5 lg:hidden mb-4">
+              <ColdTrackLogo className="w-9 h-9" />
+              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                ColdTrack
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Iniciar sesión
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Ingresá con tu cuenta para acceder al panel de equipos y órdenes de servicio.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+              >
+                Correo electrónico
+              </label>
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => setTouched({ ...touched, email: true })}
-                placeholder="ejemplo@coldtrack.com"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-900/70 text-slate-900 dark:text-white outline-none transition-all ${
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (formError) setFormError("");
+                }}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                placeholder="nombre@empresa.com"
+                className={`w-full h-11 px-3.5 rounded-lg border text-sm bg-slate-50/70 dark:bg-slate-900/70 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-colors ${
                   emailError
-                    ? "border-red-500 focus:ring-2 focus:ring-red-500/20"
-                    : isEmailValid
-                    ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                    : "border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+                    : "border-slate-300 dark:border-slate-700 focus:border-[#034AAD] dark:focus:border-blue-500 focus:ring-2 focus:ring-[#034AAD]/15 dark:focus:ring-blue-500/15"
                 }`}
               />
+              {emailError && (
+                <p className="text-red-600 dark:text-red-400 text-xs flex items-center gap-1.5 pt-0.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{emailError}</span>
+                </p>
+              )}
             </div>
-            {emailError && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
-                <AlertCircle className="w-3 h-3" /> {emailError}
-              </p>
-            )}
-          </div>
 
-          {/* Password */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="password"
-              className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-            >
-              Contraseña
-            </label>
-            <div className="relative">
-              <div
-                className={`absolute left-3.5 top-3 transition-colors ${
-                  isPasswordValid
-                    ? "text-emerald-500"
-                    : "text-slate-400 dark:text-slate-500"
-                }`}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
-                <Lock className="w-4 h-4" />
+                Contraseña
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (formError) setFormError("");
+                  }}
+                  onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                  placeholder="Ingresá tu contraseña"
+                  className={`w-full h-11 pl-3.5 pr-10 rounded-lg border text-sm bg-slate-50/70 dark:bg-slate-900/70 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-colors ${
+                    passwordError
+                      ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+                      : "border-slate-300 dark:border-slate-700 focus:border-[#034AAD] dark:focus:border-blue-500 focus:ring-2 focus:ring-[#034AAD]/15 dark:focus:ring-blue-500/15"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onBlur={() => setTouched({ ...touched, password: true })}
-                placeholder="Ingresa tu contraseña"
-                className={`w-full pl-10 pr-10 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-900/70 text-slate-900 dark:text-white outline-none transition-all ${
-                  passwordError
-                    ? "border-red-500 focus:ring-2 focus:ring-red-500/20"
-                    : isPasswordValid
-                    ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                    : "border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              {passwordError && (
+                <p className="text-red-600 dark:text-red-400 text-xs flex items-center gap-1.5 pt-0.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{passwordError}</span>
+                </p>
+              )}
+            </div>
+
+            {formError && (
+              <div
+                role="alert"
+                className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-xs flex items-start gap-2"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {passwordError && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1 font-medium">
-                <AlertCircle className="w-3 h-3" /> {passwordError}
-              </p>
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{formError}</span>
+              </div>
             )}
-          </div>
 
-          {/* Form Error */}
-          {formError && (
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{formError}</span>
-            </div>
-          )}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 bg-[#034AAD] hover:bg-[#023b8c] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors"
+            >
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verificando...
+                </span>
+              ) : (
+                "Ingresar"
+              )}
+            </Button>
+          </form>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={
-              isLoading ||
-              (touched.email && !isEmailValid) ||
-              (touched.password && !isPasswordValid)
-            }
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-5 rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 hover:scale-[1.01] gap-2 mt-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Validando Credenciales...</span>
-              </>
-            ) : (
-              <>
-                <span>Ingresar al Sistema</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </Button>
-        </form>
-      </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-4">
+            ¿Problemas para acceder? Consultá con el administrador de tu red de equipos.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
