@@ -12,12 +12,13 @@ import { EquipmentSimulator3D } from "@/components/three/EquipmentSimulator3D";
 import { ColdTrackSensor3D } from "@/components/three/ColdTrackSensor3D";
 import { processedData } from "@/data/mockData";
 
-/** Adapta la telemetría del equipo a los 5 parámetros de los simuladores. */
 function toSimTelemetry(equipo) {
   const { thermal, electrical, mechanical, operational } = equipo.telemetry;
   const hz = (mechanical.compressor_vibration_x_hz + mechanical.compressor_vibration_y_hz) / 2;
   return {
     temperatura: thermal.internal_temp_c,
+    tempEvaporador: thermal.evaporator_temp_c,
+    tempAmbiente: thermal.ambient_temp_c,
     humedad: thermal.humidity_pct,
     estadoPuerta: operational.door_status === "open" ? "abierta" : "cerrada",
     corriente: electrical.compressor_amps,
@@ -27,7 +28,14 @@ function toSimTelemetry(equipo) {
 
 function statusOf(t) {
   if (t.corriente > 10 && t.vibracion === "alta") return "error";
-  if (t.estadoPuerta === "abierta" || t.temperatura > 8 || t.humedad > 75) return "warning";
+  if (
+    t.estadoPuerta === "abierta" ||
+    t.temperatura > 8 ||
+    (t.tempEvaporador ?? -10) > 0 ||
+    t.humedad > 75
+  ) {
+    return "warning";
+  }
   return "ok";
 }
 

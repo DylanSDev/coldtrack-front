@@ -5,20 +5,16 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import { CameraControls, Environment, Grid, Html, Lightformer, RoundedBox, useGLTF } from "@react-three/drei";
 import { Bloom, EffectComposer, N8AO } from "@react-three/postprocessing";
-import { Activity, Cpu, DoorClosed, Droplets, Maximize2, Minimize2, X, Zap } from "lucide-react";
+import { Activity, Cpu, DoorClosed, Droplets, Maximize2, Minimize2, Thermometer, X, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useFullscreen } from "@/hooks/useFullscreen";
 
-// ---------------------------------------------------------------------------
-// Tipos públicos
-// ---------------------------------------------------------------------------
-export type SensorId = "esp32" | "sht31" | "reed" | "sct013" | "mpu6050";
+export type SensorId = "esp32" | "sht31" | "ds18b20" | "reed" | "sct013" | "mpu6050";
 
 export type ColdTrackSensor3DProps = {
   activeSensor?: SensorId | null;
   onSelectSensor?: (id: SensorId | null) => void;
   telemetryStatus?: "ok" | "warning" | "error";
-  /** Opcional: reemplaza el gabinete procedural por un modelo .glb. */
   modelUrl?: string;
   className?: string;
 };
@@ -38,10 +34,20 @@ const SENSOR_INFO: Record<
     icon: Droplets,
     mide: "Temperatura interior (°C) y humedad relativa (%).",
     conexion: "I2C: SDA en GPIO 21, SCL en GPIO 22 (dirección 0x44).",
-    falla: "Pérdida de frío, fuga de gas o burletes dañados.",
+    falla: "Pérdida de frío, ingreso de humedad o burletes dañados.",
+  },
+  ds18b20: {
+    n: 2,
+    name: "Sondas de evaporador y ambiente",
+    model: "DS18B20 (×2)",
+    bus: "Bus 1-Wire",
+    icon: Thermometer,
+    mide: "Temperatura de serpentina evaporadora (°C) y ambiente exterior (°C).",
+    conexion: "1-Wire: datos en GPIO 4 con resistencia pull-up de 4,7 kΩ a 3,3 V.",
+    falla: "Fuga de gas refrigerante (evaporador > 0 °C) o bloqueo por hielo.",
   },
   reed: {
-    n: 2,
+    n: 3,
     name: "Sensor magnético de puerta",
     model: "Reed Switch",
     bus: "Entrada digital",
@@ -51,7 +57,7 @@ const SENSOR_INFO: Record<
     falla: "Puerta abierta o mal cerrada por tiempo prolongado.",
   },
   sct013: {
-    n: 3,
+    n: 4,
     name: "Pinza amperométrica",
     model: "SCT-013",
     bus: "Entrada analógica",
@@ -61,7 +67,7 @@ const SENSOR_INFO: Record<
     falla: "Compresor trabado (sobrecorriente) o que no arranca.",
   },
   mpu6050: {
-    n: 4,
+    n: 5,
     name: "Acelerómetro / vibración",
     model: "MPU-6050",
     bus: "Bus I2C",
@@ -71,30 +77,27 @@ const SENSOR_INFO: Record<
     falla: "Desbalance, soportes flojos o compresor trabado.",
   },
   esp32: {
-    n: 5,
+    n: 6,
     name: "Microcontrolador",
     model: "ESP32-WROOM-32",
     bus: "Wi-Fi 2,4 GHz",
     icon: Cpu,
-    mide: "Concentra los 5 parámetros y los transmite por Wi-Fi (MQTT).",
-    conexion: "Alimentación 5 V por USB. Buses I2C, ADC1 y GPIO hacia los sensores.",
+    mide: "Concentra los parámetros del equipo y los transmite por Wi-Fi (MQTT).",
+    conexion: "Alimentación 5 V por USB. Buses I2C, 1-Wire, ADC1 y GPIO hacia los sensores.",
     falla: "Pérdida de conectividad o reinicios del nodo.",
   },
 };
 
-const SENSOR_ORDER: SensorId[] = ["sht31", "reed", "sct013", "mpu6050", "esp32"];
+const SENSOR_ORDER: SensorId[] = ["sht31", "ds18b20", "reed", "sct013", "mpu6050", "esp32"];
 const STATUS_COLOR = { ok: "#34d399", warning: "#fbbf24", error: "#f87171" } as const;
 const STATUS_LABEL = { ok: "Operativo", warning: "Con advertencias", error: "Con fallas" } as const;
 
-// ---------------------------------------------------------------------------
-// Medidas (1 unidad ≈ 10 cm)
-// ---------------------------------------------------------------------------
 const BW = 1.5;
 const BH = 0.42;
 const BD = 1.0;
 const WALL = 0.05;
 const CORNER = 0.09;
-const GLAND_X = [-0.52, -0.18, 0.18, 0.52];
+const GLAND_X = [-0.54, -0.27, 0, 0.27, 0.54];
 const GLAND_Y = 0.2;
 const CABLE_R = 0.027;
 
@@ -103,29 +106,38 @@ const BOARD_Z = -0.08;
 const PIN_X0 = -0.32;
 const PIN_STEP = 0.04;
 
-const SHT_POS: Vec3 = [-1.8, 0.064, 1.5];
-const MPU_POS: Vec3 = [-0.6, 0.012, 1.6];
-const SCT_POS: Vec3 = [0.85, 0.2, 1.5];
-const REED_POS: Vec3 = [1.72, 0.055, 0.55];
-const SENSOR_POS: Record<Exclude<SensorId, "esp32">, Vec3> = { sht31: SHT_POS, mpu6050: MPU_POS, sct013: SCT_POS, reed: REED_POS };
+const SHT_POS: Vec3 = [-1.85, 0.064, 1.4];
+const DS18_POS: Vec3 = [-1.05, 0.042, 1.72];
+const MPU_POS: Vec3 = [-0.15, 0.012, 1.62];
+const SCT_POS: Vec3 = [0.9, 0.2, 1.5];
+const REED_POS: Vec3 = [1.75, 0.055, 0.55];
+const SENSOR_POS: Record<Exclude<SensorId, "esp32">, Vec3> = {
+  sht31: SHT_POS,
+  ds18b20: DS18_POS,
+  mpu6050: MPU_POS,
+  sct013: SCT_POS,
+  reed: REED_POS,
+};
 
 const DPR: [number, number] = [1, 1.75];
 const Z_RANGE: [number, number] = [30, 0];
 const VIEWS: Record<SensorId | "default", { pos: Vec3; target: Vec3 }> = {
   default: { pos: [2.75, 3.0, 5.0], target: [0, 0.15, 0.7] },
   esp32: { pos: [0.5, 1.55, 0.8], target: [0, 0.14, 0.02] },
-  sht31: { pos: [-1.2, 1.1, 2.5], target: [-1.65, 0.05, 1.05] },
-  mpu6050: { pos: [-0.25, 0.75, 2.6], target: MPU_POS },
-  sct013: { pos: [1.5, 0.95, 2.7], target: SCT_POS },
+  sht31: { pos: [-1.25, 1.1, 2.45], target: [-1.7, 0.05, 1.05] },
+  ds18b20: { pos: [-0.75, 0.85, 2.75], target: DS18_POS },
+  mpu6050: { pos: [0.15, 0.75, 2.6], target: MPU_POS },
+  sct013: { pos: [1.55, 0.95, 2.7], target: SCT_POS },
   reed: { pos: [2.7, 0.9, 1.6], target: REED_POS },
 };
 const CAMERA = { position: VIEWS.default.pos, fov: 34 };
 
 const CALLOUTS: Record<SensorId, { at: Vec3; side: "left" | "right" }> = {
-  sht31: { at: [-1.75, 0.16, 1.45], side: "left" },
-  mpu6050: { at: [-0.72, 0.05, 1.68], side: "left" },
-  sct013: { at: [0.98, 0.04, 1.72], side: "right" },
-  reed: { at: [1.88, 0.11, 0.5], side: "right" },
+  sht31: { at: [-1.8, 0.16, 1.35], side: "left" },
+  ds18b20: { at: [-1.12, 0.13, 1.78], side: "left" },
+  mpu6050: { at: [-0.18, 0.06, 1.7], side: "left" },
+  sct013: { at: [1.02, 0.04, 1.72], side: "right" },
+  reed: { at: [1.9, 0.11, 0.5], side: "right" },
   esp32: { at: [0.5, 0.2, BOARD_Z], side: "right" },
 };
 
@@ -844,11 +856,11 @@ const WIRE_COLORS = ["#c62828", "#111317", "#e2b100", "#1e8e3e", "#c62828", "#e8
 
 const INNER_WIRES: { points: Vec3[]; color: string }[] = GLAND_X.flatMap((gx, g) =>
   [0, 1].map((w) => {
-    const block = g < 2 ? 0 : 1;
-    const pole = (g % 2) * 2 + w;
+    const block = g < 3 ? 0 : 1;
+    const pole = (g * 2 + w) % 4;
     const ex = TB_X[block] + TB_POLES[pole];
     return {
-      color: WIRE_COLORS[g * 2 + w],
+      color: WIRE_COLORS[(g * 2 + w) % WIRE_COLORS.length],
       points: [
         [gx + (w ? 0.012 : -0.012), GLAND_Y, BD / 2 - 0.02],
         [gx + (w ? 0.02 : -0.02), GLAND_Y - 0.02, BD / 2 - WALL - 0.04],
@@ -917,30 +929,41 @@ const start = (g: number): Vec3[] => [
 ];
 
 const SHT_ENTRY: Vec3 = [SHT_POS[0] + 0.155, SHT_POS[1], SHT_POS[2] - 0.155];
+const DS18_ENTRY: Vec3 = [DS18_POS[0] + 0.04, 0.028, DS18_POS[2] - 0.18];
 const CABLE_PATHS: { points: Vec3[]; color: string }[] = [
   {
     color: "#0c0e11",
     points: [
       ...start(0),
-      [-0.62, FLOOR_Y + 0.03, Z0 + 0.52],
-      [-0.92, FLOOR_Y, Z0 + 0.5],
-      ...coil([-1.5, 0.62], 0.27, 2.2, -0.35),
-      [-1.38, FLOOR_Y + 0.05, 1.08],
-      [-1.52, SHT_POS[1], 1.22],
+      [-0.65, FLOOR_Y + 0.03, Z0 + 0.5],
+      [-0.95, FLOOR_Y, Z0 + 0.48],
+      ...coil([-1.52, 0.58], 0.25, 2.2, -0.35),
+      [-1.42, FLOOR_Y + 0.05, 1.02],
+      [-1.56, SHT_POS[1], 1.15],
       SHT_ENTRY,
     ],
   },
   {
+    color: "#1e293b",
+    points: [
+      ...start(1),
+      [-0.36, FLOOR_Y + 0.025, Z0 + 0.52],
+      [-0.64, FLOOR_Y, 1.15],
+      [-0.88, FLOOR_Y, 1.38],
+      DS18_ENTRY,
+    ],
+  },
+  {
     color: "#3b4047",
-    points: [...start(1), [-0.2, FLOOR_Y + 0.02, Z0 + 0.56], [-0.3, FLOOR_Y, 1.25], [-0.5, FLOOR_Y, 1.44], [MPU_POS[0] + 0.06, 0.03, MPU_POS[2] - 0.1]],
+    points: [...start(2), [-0.04, FLOOR_Y + 0.02, Z0 + 0.56], [-0.08, FLOOR_Y, 1.25], [-0.1, FLOOR_Y, 1.44], [MPU_POS[0] + 0.06, 0.03, MPU_POS[2] - 0.1]],
   },
   {
     color: "#0c0e11",
-    points: [...start(2), [0.2, FLOOR_Y + 0.02, Z0 + 0.56], [0.32, FLOOR_Y, 1.2], [0.5, FLOOR_Y + 0.02, 1.36], [SCT_POS[0] - 0.215, 0.095, SCT_POS[2] - 0.118]],
+    points: [...start(3), [0.32, FLOOR_Y + 0.02, Z0 + 0.56], [0.42, FLOOR_Y, 1.2], [0.58, FLOOR_Y + 0.02, 1.36], [SCT_POS[0] - 0.215, 0.095, SCT_POS[2] - 0.118]],
   },
   {
     color: "#5a4636",
-    points: [...start(3), [0.6, FLOOR_Y + 0.02, Z0 + 0.52], [0.95, FLOOR_Y, 1.02], [1.35, FLOOR_Y, 0.78], [REED_POS[0] - 0.19, 0.045, REED_POS[2] + 0.062]],
+    points: [...start(4), [0.64, FLOOR_Y + 0.02, Z0 + 0.52], [0.98, FLOOR_Y, 1.02], [1.38, FLOOR_Y, 0.78], [REED_POS[0] - 0.19, 0.045, REED_POS[2] + 0.062]],
   },
 ];
 
@@ -954,10 +977,6 @@ function Cables() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sensores
-// ---------------------------------------------------------------------------
-/** Sonda SHT31 encapsulada con filtro sinterizado. Eje local +Y = extremo del cable. */
 function Sht31({ mats }: { mats: Mats }) {
   return (
     <group rotation={[0, Math.PI / 4, -Math.PI / 2]}>
@@ -986,6 +1005,79 @@ function Sht31({ mats }: { mats: Mats }) {
       <mesh material={mats.nylon} position={[0, 0.185, 0]}>
         <cylinderGeometry args={[0.034, 0.058, 0.05, 20]} />
       </mesh>
+    </group>
+  );
+}
+
+function SteelProbe({ mats, tagMat, withClamp }: { mats: Mats; tagMat: THREE.Material; withClamp?: boolean }) {
+  return (
+    <group rotation={[Math.PI / 2, 0, 0]}>
+      <mesh material={mats.steel} position={[0, 0.06, 0]}>
+        <cylinderGeometry args={[0.026, 0.026, 0.22, 24]} />
+      </mesh>
+      <mesh material={mats.steel} position={[0, 0.17, 0]}>
+        <sphereGeometry args={[0.026, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      </mesh>
+      {[-0.032, -0.044].map((y) => (
+        <mesh key={y} material={mats.steelDark} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.0265, 0.003, 10, 24]} />
+        </mesh>
+      ))}
+      <mesh material={mats.nylon} position={[0, -0.085, 0]}>
+        <cylinderGeometry args={[0.032, 0.03, 0.08, 20]} />
+      </mesh>
+      <mesh material={tagMat} position={[0, -0.078, 0]}>
+        <cylinderGeometry args={[0.033, 0.033, 0.022, 20]} />
+      </mesh>
+      <mesh material={mats.nylon} position={[0, -0.14, 0]}>
+        <cylinderGeometry args={[0.02, 0.03, 0.035, 16]} />
+      </mesh>
+      {withClamp && (
+        <group position={[0, 0.055, 0]}>
+          <mesh material={mats.brass} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.03, 0.005, 10, 24]} />
+          </mesh>
+          <mesh material={mats.brass} position={[0.038, 0, 0]}>
+            <boxGeometry args={[0.036, 0.018, 0.012]} />
+          </mesh>
+          <group position={[0.044, 0, 0.008]} rotation={[Math.PI / 2, 0, 0]}>
+            <Screw mats={mats} r={0.009} />
+          </group>
+        </group>
+      )}
+    </group>
+  );
+}
+
+const DS18_LEADS: Vec3[][] = [
+  [
+    [0.04, -0.008, -0.14],
+    [0.055, -0.008, -0.09],
+    [0.065, 0, -0.05],
+  ],
+  [
+    [0.02, -0.008, -0.14],
+    [-0.03, -0.008, -0.1],
+    [-0.075, 0, -0.06],
+  ],
+];
+
+function Ds18b20({ mats }: { mats: Mats }) {
+  return (
+    <group rotation={[0, 0.22, 0]}>
+      <group position={[0.065, 0, 0.09]}>
+        <SteelProbe mats={mats} tagMat={mats.blue} withClamp />
+      </group>
+      <group position={[-0.085, -0.002, 0.07]} rotation={[0, -0.26, 0]}>
+        <SteelProbe mats={mats} tagMat={mats.gold} />
+      </group>
+      <RoundedBox args={[0.085, 0.038, 0.075]} radius={0.01} smoothness={3} material={mats.nylon} position={[0.035, -0.006, -0.155]} />
+      <mesh material={mats.blue} position={[0.035, 0.0135, -0.155]}>
+        <boxGeometry args={[0.055, 0.003, 0.038]} />
+      </mesh>
+      {DS18_LEADS.map((pts, i) => (
+        <Tube key={i} points={pts} radius={0.014} color="#111317" roughness={0.45} />
+      ))}
     </group>
   );
 }
@@ -1232,6 +1324,7 @@ function GltfModel({ url }: { url: string }) {
 function Scene({
   active,
   open,
+  showLabels,
   status,
   onSelect,
   modelUrl,
@@ -1241,6 +1334,7 @@ function Scene({
   onReady: () => void;
   active: SensorId | null;
   open: boolean;
+  showLabels: boolean;
   status: Status;
   onSelect: (id: SensorId) => void;
   modelUrl?: string;
@@ -1300,6 +1394,9 @@ function Scene({
           <Selectable id="sht31" position={SHT_POS} ring={{ radius: 0.3, y: -0.06 }} active={active === "sht31"} onSelect={onSelect}>
             <Sht31 mats={mats} />
           </Selectable>
+          <Selectable id="ds18b20" position={DS18_POS} ring={{ radius: 0.27, y: -0.038 }} active={active === "ds18b20"} onSelect={onSelect}>
+            <Ds18b20 mats={mats} />
+          </Selectable>
           <Selectable id="reed" position={REED_POS} ring={{ radius: 0.3, y: -0.05 }} active={active === "reed"} onSelect={onSelect}>
             <Reed mats={mats} />
           </Selectable>
@@ -1312,7 +1409,7 @@ function Scene({
         </Shadows>
       )}
 
-      {!modelUrl && overlay && SENSOR_ORDER.map((id) => <Callout key={id} id={id} active={active === id} onSelect={onSelect} portal={portal} />)}
+      {!modelUrl && overlay && showLabels && SENSOR_ORDER.map((id) => <Callout key={id} id={id} active={active === id} onSelect={onSelect} portal={portal} />)}
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow material={mats.floor}>
         <planeGeometry args={[60, 60]} />
@@ -1337,6 +1434,7 @@ export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatu
   const controlled = activeSensor !== undefined;
   const [internal, setInternal] = useState<SensorId | null>(null);
   const [open, setOpen] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
   const [overlay, setOverlay] = useState<HTMLDivElement | null>(null);
   const [ready, setReady] = useState(false);
   const active = controlled ? (activeSensor ?? null) : internal;
@@ -1372,17 +1470,15 @@ export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatu
       }`}
     >
       <Canvas shadows dpr={DPR} camera={CAMERA} onPointerMissed={handlers.clear}>
-        <Scene active={active} open={open} status={telemetryStatus} onSelect={handlers.select} modelUrl={modelUrl} overlay={overlay} onReady={handlers.ready} />
+        <Scene active={active} open={open} showLabels={showLabels} status={telemetryStatus} onSelect={handlers.select} modelUrl={modelUrl} overlay={overlay} onReady={handlers.ready} />
       </Canvas>
       {!ready && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">
           Cargando modelo 3D…
         </div>
       )}
-      {/* capa donde se montan las etiquetas flotantes */}
       <div ref={setOverlay} className="pointer-events-none absolute inset-0 isolate overflow-hidden" />
 
-      {/* Título y estado */}
       <div className="pointer-events-none absolute left-5 top-4">
         <h3 className="text-lg font-medium text-slate-100">Sensor IoT ColdTrack</h3>
         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
@@ -1391,21 +1487,34 @@ export function ColdTrackSensor3D({ activeSensor, onSelectSensor, telemetryStatu
         </p>
       </div>
 
-      {/* Toggle tapa y pantalla completa */}
       <div className="absolute right-4 top-4 flex items-center gap-2">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={open}
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-2.5 rounded-full border border-white/15 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur hover:text-white"
-        >
-          <span className="hidden sm:inline">Abrir tapa / Despiece</span>
-          <span className="sm:hidden">Despiece</span>
-          <span className={`relative h-4 w-8 rounded-full transition-colors ${open ? "bg-emerald-500" : "bg-slate-600"}`}>
-            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${open ? "left-[18px]" : "left-0.5"}`} />
-          </span>
-        </button>
+        <div className="flex items-center divide-x divide-white/10 rounded-full border border-white/15 bg-slate-900/70 backdrop-blur">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={open}
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-slate-200 hover:text-white"
+          >
+            <span className="hidden sm:inline">Abrir tapa / Despiece</span>
+            <span className="sm:hidden">Despiece</span>
+            <span className={`relative h-4 w-8 rounded-full transition-colors ${open ? "bg-emerald-500" : "bg-slate-600"}`}>
+              <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${open ? "left-[18px]" : "left-0.5"}`} />
+            </span>
+          </button>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showLabels}
+            onClick={() => setShowLabels(!showLabels)}
+            className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-slate-200 hover:text-white"
+          >
+            <span>Etiquetas</span>
+            <span className={`relative h-4 w-8 rounded-full transition-colors ${showLabels ? "bg-emerald-500" : "bg-slate-600"}`}>
+              <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${showLabels ? "left-[18px]" : "left-0.5"}`} />
+            </span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={toggleFullscreen}
