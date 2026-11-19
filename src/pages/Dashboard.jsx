@@ -192,7 +192,7 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredEquipos.length === 0 && (
             <p className="col-span-full text-center text-sm text-slate-500 py-10">
               Ningún equipo coincide con los filtros.
